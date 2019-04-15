@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/messagetextfield"
+        android:layout_width="320dp"
+        android:layout_height="657dp"
+        android:editable="true"
+        android:inputType="textMultiLine"
+        android:text="Hello My Name Is ..."
+        app:layout_constraintLeft_toLeftOf="@+id/btnstop"
+        app:layout_constraintRight_toRightOf="@+id/btnSome1"
+        app:layout_constraintTop_toBottomOf="@+id/btnrighttra" />
+
+    <Button
+        android:id="@+id/btnfwd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="fwd"
+        app:layout_constraintLeft_toRightOf="@+id/btnstop"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnstop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="stop"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnSome1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Some1"
+        app:layout_constraintLeft_toRightOf="@+id/btnfwd"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnback"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BACK"
+        app:layout_constraintLeft_toRightOf="@+id/btnSome1"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnrightturn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="turn right"
+        app:layout_constraintLeft_toLeftOf="@+id/btnstop"
+        app:layout_constraintTop_toBottomOf="@+id/btnstop" />
+
+    <Button
+        android:id="@+id/btnleftturn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="turn left"
+        app:layout_constraintLeft_toRightOf="@+id/btnrightturn"
+        app:layout_constraintTop_toBottomOf="@+id/btnstop" />
+
+    <Button
+        android:id="@+id/btnrighttra"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="righttra"
+        app:layout_constraintLeft_toRightOf="@+id/btnleftturn"
+        app:layout_constraintTop_toBottomOf="@+id/btnSome1" />
+
+    <Button
+        android:id="@+id/btnlefttra"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="lefttra"
+        app:layout_constraintLeft_toRightOf="@+id/btnrighttra"
+        app:layout_constraintTop_toBottomOf="@+id/btnback" />
+
+
+</android.support.constraint.ConstraintLayout>
