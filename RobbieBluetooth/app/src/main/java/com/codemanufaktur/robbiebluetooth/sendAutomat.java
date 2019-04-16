@@ -45,10 +45,15 @@ public class sendAutomat {
     byte lefttraverse[] = new byte[] {1,1,127,127,0,127};
     byte some1[] = new byte[] {1,1,46,127,0,127};
 
+    byte setwheelspeedul[] = new byte[] {81,1,0,127,0,127};
+    byte setwheelspeedll[] = new byte[] {82,1,0,127,0,127};
+    byte setwheelspeedlr[] = new byte[] {83,1,0,127,0,127};
+    byte setwheelspeedur[] = new byte[] {84,1,0,127,0,127};
+    byte setwheelaction[] = new byte[] {96,0,127,0,127};
 
-    //                                                      0       1       2       3       4       5       6       7       8       9       10          11      12,    13           14        15              16            17
-    List<byte[]> btcommandsList = Arrays.asList         (   init1,  init2,  init3,  init4,  init5,  init6,  init7,  init8,  init9,  stop,   heartbeat,  fdw1,   back,  rightturn,  leftturn,  righttraverse,  lefttraverse, some1 );
-    List<Integer> btconnadsControlList = Arrays.asList  (   1,      2,      3,      4,      5,      6,      7,      8,      9,      9,      10,         10,     10,    10,          10,       10,             10,           10);
+    //                                                      0       1       2       3       4       5       6       7       8       9       10          11      12,    13           14        15              16            17      18                  19                  20                  21                  22
+    List<byte[]> btcommandsList = Arrays.asList         (   init1,  init2,  init3,  init4,  init5,  init6,  init7,  init8,  init9,  stop,   heartbeat,  fdw1,   back,  rightturn,  leftturn,  righttraverse,  lefttraverse, some1,  setwheelspeedul,    setwheelspeedll,    setwheelspeedlr,    setwheelspeedur,    setwheelaction );
+    List<Integer> btconnadsControlList = Arrays.asList  (   1,      2,      3,      4,      5,      6,      7,      8,      9,      9,      10,         10,     10,    10,          10,       10,             10,           10,     10,                  9,                  9,                  9,                  10);
 
     public int cmdStop=9;
     public int cmdFwd=11;
@@ -58,6 +63,11 @@ public class sendAutomat {
     public int cmdrighttra=15;
     public int cmdlefttra=16;
     public int cmdsome1=17;
+    int cmdsetwheelspeedul=18;
+    int cmdsetwheelspeedll=19;
+    int cmdsetwheelspeedlr=20;
+    int cmdsetwheelspeedur=21;
+    int cmdwheelaction=22;
 
     private int indexToSend;
 
@@ -66,6 +76,11 @@ public class sendAutomat {
     }
 
     void setNewCommand(int index){
+        indexToSend=index;
+    }
+
+    void setNewCommand(int index, byte message){
+        btcommandsList.get(index)[2]=message;
         indexToSend=index;
     }
 

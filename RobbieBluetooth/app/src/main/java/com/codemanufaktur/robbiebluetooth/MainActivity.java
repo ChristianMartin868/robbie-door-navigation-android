@@ -17,6 +17,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -38,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
 
     ConnectThread btConnectThread;
     ConnectedThread myBTconnectedThread;
+
+    int speedDefinedBySeekbar = 0;
 
 
 
@@ -89,6 +92,21 @@ public class MainActivity extends AppCompatActivity {
             byte[] cmd = mysendAutomat.getNextSequence();
             myBTconnectedThread.write(cmd);
 
+
+            if (cmd[0] == 81) {
+                TextView tv = findViewById(R.id.messagetextfield);
+                StringBuilder strb = new StringBuilder();
+                strb.append(cmd[0]);
+                strb.append("-");
+                strb.append(cmd[1]);
+                strb.append("-");
+                strb.append(cmd[2]);
+                strb.append("-");
+                strb.append(cmd[3]);
+                strb.append("__");
+                tv.append(strb.toString());
+            }
+
             /* and here comes the "trick" */
             timeHandler.postDelayed(this, 100);
         }
@@ -105,66 +123,93 @@ public class MainActivity extends AppCompatActivity {
      */
 
     void setButtonFunctions(){
-        findViewById(R.id.btnSome1).setOnClickListener(new View.OnClickListener() {
+
+        SeekBar myseekbar = findViewById(R.id.seekBar2);
+        myseekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onClick(View v) {
-                // TextView tv = findViewById(R.id.messagetextfield);
-                //tv.setText(mystrb.toString());
-                mysendAutomat.setNewCommand(mysendAutomat.cmdsome1);
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                Integer ii = progress;
+                speedDefinedBySeekbar = progress;
+
+                TextView tv = findViewById(R.id.messagetextfield);
+                tv.setText( ii.toString()  + "->" + speedDefinedBySeekbar + "\n");
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
+        myseekbar.setProgress(100);
 
-
-        findViewById(R.id.btnlefttra).setOnClickListener(new View.OnClickListener() {
+        View.OnClickListener myBtnListener = new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                mysendAutomat.setNewCommand(mysendAutomat.cmdlefttra);
+                switch (v.getId()){
+                    case R.id.btnSome1:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdsome1);
+                        break;
+                    case R.id.btnlefttra:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdlefttra);
+                        break;
+                    case R.id.btnrighttra:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdrighttra);
+                        break;
+                    case R.id.btnleftturn:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+                        break;
+                    case R.id.btnrightturn:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
+                        break;
+                    case R.id.btnback:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdBack);
+                        break;
+                    case R.id.btnstop:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                        break;
+                    case R.id.btnfwd:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                        break;
+                    case R.id.btnsetspeedul:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdsetwheelspeedul, (byte)(speedDefinedBySeekbar) );
+                        break;
+                     case R.id.btnsetspeedll:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdsetwheelspeedll, (byte)(speedDefinedBySeekbar) );
+                        break;
+                    case R.id.btnsetspeedlr:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdsetwheelspeedlr, (byte)(speedDefinedBySeekbar) );
+                        break;
+                    case R.id.btnsetspeedur:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdsetwheelspeedur, (byte)(speedDefinedBySeekbar) );
+                        break;
+                    case R.id.btnwheelaction:
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdwheelaction);
+                        break;
+                }
+
             }
-        });
-
-        findViewById(R.id.btnrighttra).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mysendAutomat.setNewCommand(mysendAutomat.cmdrighttra);
-            }
-        });
-
-        findViewById(R.id.btnleftturn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
-            }
-        });
-
-        findViewById(R.id.btnrightturn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
-            }
-        });
-
-        findViewById(R.id.btnback).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mysendAutomat.setNewCommand(mysendAutomat.cmdBack);
-            }
-        });
+        };
 
 
+        findViewById(R.id.btnSome1).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnlefttra).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnrighttra).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnleftturn).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnrightturn).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnback).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnstop).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnfwd).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnsetspeedul).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnsetspeedll).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnsetspeedlr).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnsetspeedur).setOnClickListener(myBtnListener);
+        findViewById(R.id.btnwheelaction).setOnClickListener(myBtnListener);
 
-        findViewById(R.id.btnstop).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
-            }
-        });
-
-        findViewById(R.id.btnfwd).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
-            }
-        });
 
        /*Button btn = findViewById(R.id.btnstop);
         btn.setOnTouchListener(new View.OnTouchListener() {
@@ -380,7 +425,8 @@ public class MainActivity extends AppCompatActivity {
         MY_UUID = uuds[0].getUuid();
         String myuuid2=  MY_UUID.toString();
         btConnectThread = new ConnectThread(device);
-        btConnectThread.run();
+        new Thread(btConnectThread).start();
+        //btConnectThread.run();
 
     }
 
