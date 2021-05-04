@@ -7,12 +7,16 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
+import android.widget.Toast;
 
+import com.codemanufaktur.robbiebluetooth.MainActivity;
 import com.codemanufaktur.robbiebluetooth.env.BorderedText;
 import com.codemanufaktur.robbiebluetooth.env.ImageUtils;
 import com.codemanufaktur.robbiebluetooth.env.Logger;
+import com.codemanufaktur.robbiebluetooth.sendAutomat;
 
 import org.tensorflow.lite.examples.detection.tflite.Detector;
 
@@ -21,6 +25,7 @@ import java.util.List;
 import java.util.Queue;
 
 public class MultiBoxTracker {
+    public sendAutomat mysendAutomat = new sendAutomat();
     private static final float TEXT_SIZE_DIP = 18;
     private static final float MIN_SIZE = 16.0f;
     private static final int[] COLORS = {
@@ -51,6 +56,7 @@ public class MultiBoxTracker {
     private int frameWidth;
     private int frameHeight;
     private int sensorOrientation;
+    public String commandMessage = "";
 
     public MultiBoxTracker(final Context context) {
         for (final int color : COLORS) {
@@ -152,10 +158,9 @@ public class MultiBoxTracker {
 
             final RectF detectionScreenRect = new RectF();
             rgbFrameToScreen.mapRect(detectionScreenRect, detectionFrameRect);
-
+            Log.d("Rect coordinates Track", "DetectionFrameRect: " + detectionFrameRect + " DetectionRect: " + detectionScreenRect);
             logger.v(
                     "Result! Frame: " + result.getLocation() + " mapped to screen:" + detectionScreenRect);
-
             screenRects.add(new Pair<Float, RectF>(result.getConfidence(), detectionScreenRect));
 
             if (detectionFrameRect.width() < MIN_SIZE || detectionFrameRect.height() < MIN_SIZE) {
@@ -169,6 +174,8 @@ public class MultiBoxTracker {
         trackedObjects.clear();
         if (rectsToTrack.isEmpty()) {
             logger.v("Nothing to track, aborting.");
+            mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+            commandMessage = "Left turn";
             return;
         }
 
@@ -179,9 +186,62 @@ public class MultiBoxTracker {
             trackedRecognition.title = potential.second.getTitle();
             trackedRecognition.color = COLORS[trackedObjects.size()];
             trackedObjects.add(trackedRecognition);
+            Log.d("trackedObjects", "trackedObjects title: " + trackedRecognition.title + " trackedObjects location: " + trackedRecognition.location);
 
             if (trackedObjects.size() >= COLORS.length) {
                 break;
+            }
+        }
+
+        for (TrackedRecognition recogElement : trackedObjects) {
+            int maxHeight = 1920;
+            int maxWidth = 1080;
+            if(recogElement.title.equals("banana")) {
+                final RectF detectionScreenRectNav = new RectF();
+                rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
+                Log.d("Screen width", "Screen width: " + detectionScreenRectNav.width());
+                if(detectionScreenRectNav.width() < (maxWidth * 0.6)) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                    commandMessage = "Forward";
+                } else if(detectionScreenRectNav.width() > (maxWidth * 0.6)) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                    commandMessage = "Stop";
+                }
+                //For horizontal orientation with frame:
+                /*
+                if(recogElement.location.width() < (frameWidth * 0.3)) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                    commandMessage = "Forward";
+                } else if(recogElement.location.width() > (frameWidth * 0.3)) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                    commandMessage = "Stop";
+                }*/
+            }
+            if(recogElement.title.equals("apple")) {
+                final RectF detectionScreenRectNav = new RectF();
+                rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
+                if ((detectionScreenRectNav.centerX() < (maxWidth / 2)) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
+                    commandMessage = "Right turn";
+                } else if (detectionScreenRectNav.centerX() > (maxWidth / 2) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+                    commandMessage = "Left turn";
+                } else if (detectionScreenRectNav.width() > (maxWidth * 0.5)) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                    commandMessage = "Stop";
+                }
+                //For horizontal orientation with frame:
+                /*
+                if ((recogElement.location.centerX() < (frameWidth / 2)) & (recogElement.location.width() < (frameWidth * 0.3))) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
+                    commandMessage = "Right turn";
+                } else if (recogElement.location.centerX() > (frameWidth / 2) & (recogElement.location.width() < (frameWidth * 0.3))) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+                    commandMessage = "Left turn";
+                } else if (recogElement.location.width() > (frameWidth * 0.3)) {
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                    commandMessage = "Stop";
+                }*/
             }
         }
     }

@@ -10,6 +10,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader;
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
@@ -189,35 +190,13 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
 
                                 result.setLocation(location);
                                 mappedRecognitions.add(result);
-                                // Von MainActivity
-                                switch (result.getTitle()){
-                                    case "Fenster":
-                                        mysendAutomat.setNewCommand(mysendAutomat.cmdlefttra);
-                                        break;
-                                    case "Sonne":
-                                        mysendAutomat.setNewCommand(mysendAutomat.cmdrighttra);
-                                        break;
-                                    case "Mond":
-                                        mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
-                                        break;
-                                    case "Haus":
-                                        mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
-                                        break;
-                                    case "Hindernis":
-                                        mysendAutomat.setNewCommand(mysendAutomat.cmdBack);
-                                        break;
-                                    case "apple":
-                                        mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
-                                        break;
-                                    case "banana":
-                                        mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
-                                        break;
-                                }
-                                //Ende MainActivity
                             }
                         }
 
                         tracker.trackResults(mappedRecognitions, currTimestamp);
+                        if(tracker.commandMessage != "") {
+                            Toast.makeText(getApplicationContext(), tracker.commandMessage, Toast.LENGTH_LONG).show();
+                        }
                         trackingOverlay.postInvalidate();
 
                         computingDetection = false;

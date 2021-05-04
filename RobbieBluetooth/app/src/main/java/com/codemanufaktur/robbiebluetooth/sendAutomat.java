@@ -75,7 +75,7 @@ public class sendAutomat {
         indexToSend=cmdStop;
     }
 
-    void setNewCommand(int index){
+    public void setNewCommand(int index){
         indexToSend=index;
     }
 
