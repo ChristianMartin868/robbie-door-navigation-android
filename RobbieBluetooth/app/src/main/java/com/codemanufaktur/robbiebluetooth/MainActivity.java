@@ -197,6 +197,35 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                         if(tracker.commandMessage != "") {
                             Toast.makeText(getApplicationContext(), tracker.commandMessage, Toast.LENGTH_LONG).show();
                         }
+                        switch (tracker.commandMessage){
+                            case "some1":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdsome1);
+                                break;
+                            case "lefttra":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdlefttra);
+                                break;
+                            case "righttra":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdrighttra);
+                                break;
+                            case "Left turn":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+                                break;
+                            case "Right turn":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
+                                break;
+                            case "Back":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdBack);
+                                break;
+                            case "Stop":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                                break;
+                            case "Forward":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                                break;
+                            case "wheelaction":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdwheelaction);
+                                break;
+                        }
                         trackingOverlay.postInvalidate();
 
                         computingDetection = false;

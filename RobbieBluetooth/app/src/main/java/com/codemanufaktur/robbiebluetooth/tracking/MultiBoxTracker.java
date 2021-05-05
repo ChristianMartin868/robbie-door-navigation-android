@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
@@ -25,7 +26,6 @@ import java.util.List;
 import java.util.Queue;
 
 public class MultiBoxTracker {
-    public sendAutomat mysendAutomat = new sendAutomat();
     private static final float TEXT_SIZE_DIP = 18;
     private static final float MIN_SIZE = 16.0f;
     private static final int[] COLORS = {
@@ -174,8 +174,13 @@ public class MultiBoxTracker {
         trackedObjects.clear();
         if (rectsToTrack.isEmpty()) {
             logger.v("Nothing to track, aborting.");
-            mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
-            commandMessage = "Left turn";
+            long startTime = SystemClock.uptimeMillis();
+            if(SystemClock.uptimeMillis() == startTime + 2000) {
+                commandMessage = "Right turn";
+            } else {
+                commandMessage = "Left turn";
+            }
+
             return;
         }
 
@@ -201,19 +206,15 @@ public class MultiBoxTracker {
                 rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
                 Log.d("Screen width", "Screen width: " + detectionScreenRectNav.width());
                 if(detectionScreenRectNav.width() < (maxWidth * 0.6)) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
                     commandMessage = "Forward";
                 } else if(detectionScreenRectNav.width() > (maxWidth * 0.6)) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
                     commandMessage = "Stop";
                 }
                 //For horizontal orientation with frame:
                 /*
                 if(recogElement.location.width() < (frameWidth * 0.3)) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
                     commandMessage = "Forward";
                 } else if(recogElement.location.width() > (frameWidth * 0.3)) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
                     commandMessage = "Stop";
                 }*/
             }
@@ -221,25 +222,22 @@ public class MultiBoxTracker {
                 final RectF detectionScreenRectNav = new RectF();
                 rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
                 if ((detectionScreenRectNav.centerX() < (maxWidth / 2)) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
+                    long startTime = SystemClock.uptimeMillis();
                     commandMessage = "Right turn";
                 } else if (detectionScreenRectNav.centerX() > (maxWidth / 2) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+                    long startTime = SystemClock.uptimeMillis();
                     commandMessage = "Left turn";
                 } else if (detectionScreenRectNav.width() > (maxWidth * 0.5)) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                    long startTime = SystemClock.uptimeMillis();
                     commandMessage = "Stop";
                 }
                 //For horizontal orientation with frame:
                 /*
                 if ((recogElement.location.centerX() < (frameWidth / 2)) & (recogElement.location.width() < (frameWidth * 0.3))) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
                     commandMessage = "Right turn";
                 } else if (recogElement.location.centerX() > (frameWidth / 2) & (recogElement.location.width() < (frameWidth * 0.3))) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
                     commandMessage = "Left turn";
                 } else if (recogElement.location.width() > (frameWidth * 0.3)) {
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
                     commandMessage = "Stop";
                 }*/
             }
