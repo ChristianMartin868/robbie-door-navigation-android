@@ -8,9 +8,11 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.os.SystemClock;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
+import android.view.Display;
 import android.widget.Toast;
 
 import com.codemanufaktur.robbiebluetooth.MainActivity;
@@ -57,6 +59,8 @@ public class MultiBoxTracker {
     private int frameHeight;
     private int sensorOrientation;
     public String commandMessage = "";
+    public int maxHeight = 0;
+    public int maxWidth = 0;
 
     public MultiBoxTracker(final Context context) {
         for (final int color : COLORS) {
@@ -116,6 +120,8 @@ public class MultiBoxTracker {
                 Math.min(
                         canvas.getHeight() / (float) (rotated ? frameWidth : frameHeight),
                         canvas.getWidth() / (float) (rotated ? frameHeight : frameWidth));
+        maxHeight = canvas.getHeight();
+        maxWidth = canvas.getWidth();
         frameToCanvasMatrix =
                 ImageUtils.getTransformationMatrix(
                         frameWidth,
@@ -174,12 +180,7 @@ public class MultiBoxTracker {
         trackedObjects.clear();
         if (rectsToTrack.isEmpty()) {
             logger.v("Nothing to track, aborting.");
-            long startTime = SystemClock.uptimeMillis();
-            if(SystemClock.uptimeMillis() == startTime + 2000) {
-                commandMessage = "Right turn";
-            } else {
-                commandMessage = "Left turn";
-            }
+            commandMessage = "Left turn";
 
             return;
         }
@@ -199,9 +200,8 @@ public class MultiBoxTracker {
         }
 
         for (TrackedRecognition recogElement : trackedObjects) {
-            int maxHeight = 1920;
-            int maxWidth = 1080;
-            if(recogElement.title.equals("banana")) {
+            Log.d("Maxwidth", "maxwidth: " + maxWidth + " maxHeight: " + maxHeight);
+            if(recogElement.title.equals("person")) {
                 final RectF detectionScreenRectNav = new RectF();
                 rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
                 Log.d("Screen width", "Screen width: " + detectionScreenRectNav.width());
@@ -209,6 +209,11 @@ public class MultiBoxTracker {
                     commandMessage = "Forward";
                 } else if(detectionScreenRectNav.width() > (maxWidth * 0.6)) {
                     commandMessage = "Stop";
+                }
+                if ((detectionScreenRectNav.centerX() < (maxWidth / 4)) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
+                    commandMessage = "Left turn";
+                } else if (detectionScreenRectNav.centerX() > (maxWidth * 0.75) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
+                    commandMessage = "Right turn";
                 }
                 //For horizontal orientation with frame:
                 /*
@@ -218,17 +223,14 @@ public class MultiBoxTracker {
                     commandMessage = "Stop";
                 }*/
             }
-            if(recogElement.title.equals("apple")) {
+            if(recogElement.title.equals("banana")) {
                 final RectF detectionScreenRectNav = new RectF();
                 rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
                 if ((detectionScreenRectNav.centerX() < (maxWidth / 2)) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    long startTime = SystemClock.uptimeMillis();
                     commandMessage = "Right turn";
                 } else if (detectionScreenRectNav.centerX() > (maxWidth / 2) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    long startTime = SystemClock.uptimeMillis();
                     commandMessage = "Left turn";
                 } else if (detectionScreenRectNav.width() > (maxWidth * 0.5)) {
-                    long startTime = SystemClock.uptimeMillis();
                     commandMessage = "Stop";
                 }
                 //For horizontal orientation with frame:
