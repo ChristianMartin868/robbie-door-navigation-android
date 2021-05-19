@@ -201,7 +201,7 @@ public class MultiBoxTracker {
 
         for (TrackedRecognition recogElement : trackedObjects) {
             Log.d("Maxwidth", "maxwidth: " + maxWidth + " maxHeight: " + maxHeight);
-            if(recogElement.title.equals("person")) {
+            if(recogElement.title.equals("door")) {
                 final RectF detectionScreenRectNav = new RectF();
                 rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
                 Log.d("Screen width", "Screen width: " + detectionScreenRectNav.width());
