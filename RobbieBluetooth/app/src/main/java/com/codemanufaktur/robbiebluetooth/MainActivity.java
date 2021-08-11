@@ -21,6 +21,9 @@ import com.codemanufaktur.robbiebluetooth.env.ImageUtils;
 import com.codemanufaktur.robbiebluetooth.env.Logger;
 import com.codemanufaktur.robbiebluetooth.tracking.MultiBoxTracker;
 
+import org.tensorflow.lite.examples.detection.tflite.DepthEstimator;
+import org.tensorflow.lite.examples.detection.tflite.DepthEstimator.Device;
+import org.tensorflow.lite.examples.detection.tflite.DepthEstimator.Model;
 import org.tensorflow.lite.examples.detection.tflite.Detector;
 import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel;
 
@@ -48,13 +51,21 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
     private Integer sensorOrientation;
 
     private Detector detector;
+    private DepthEstimator depthEstimator;
+
+    /** Input image size of the model along x axis. */
+    private int imageSizeX;
+    /** Input image size of the model along y axis. */
+    private int imageSizeY;
 
     private long lastProcessingTimeMs;
     private Bitmap rgbFrameBitmap = null;
+    private Bitmap rgbFrameDepthBitmap = null;
     private Bitmap croppedBitmap = null;
     private Bitmap cropCopyBitmap = null;
 
     private boolean computingDetection = false;
+    private boolean computingDepth = false;
 
     private long timestamp = 0;
 
@@ -74,6 +85,13 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
         borderedText.setTypeface(Typeface.MONOSPACE);
 
         tracker = new MultiBoxTracker(this);
+
+        recreateDepthEstimator(getModel(), getDevice(), getNumThreads());
+
+        if (depthEstimator == null) {
+            LOGGER.e("No depthEstimator on preview!");
+            return;
+        }
 
         int cropSize = TF_OD_API_INPUT_SIZE;
 
@@ -104,6 +122,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
 
         LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight);
         rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
+        rgbFrameDepthBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
         croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Bitmap.Config.ARGB_8888);
 
         frameToCropTransform =
@@ -133,6 +152,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
     @Override
     protected void processImage() {
         ++timestamp;
+        final int cropSizeDepthmap = Math.min(previewWidth, previewHeight);
+
         final long currTimestamp = timestamp;
         trackingOverlay.postInvalidate();
 
@@ -141,10 +162,17 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
             readyForNextImage();
             return;
         }
+
+        if (computingDepth) {
+            readyForNextImage();
+            return;
+        }
         computingDetection = true;
+        computingDepth = true;
         LOGGER.i("Preparing image " + currTimestamp + " for detection in bg thread.");
 
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
+        rgbFrameDepthBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
 
         readyForNextImage();
 
@@ -239,8 +267,68 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                         showInference(lastProcessingTimeMs + "ms");
                                     }
                                 });
+
+                        if (depthEstimator != null) {
+                            final long startTimeDepthEstimation = SystemClock.uptimeMillis();
+                            float [] img_array = depthEstimator.recognizeImage(rgbFrameDepthBitmap, sensorOrientation);
+                            lastProcessingTimeMs = SystemClock.uptimeMillis() - startTimeDepthEstimation;
+
+                            computingDepth = false;
+
+                            runOnUiThread(
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            //showResultsInBottomSheet(results);
+                                            showResultsInTexture(img_array, imageSizeX, imageSizeY);
+                                            showFrameDepthInfo(previewWidth + "x" + previewHeight);
+                                            showCropDepthInfo(imageSizeX + "x" + imageSizeY);
+                                            showCameraResolutionOfDepthEstimation(cropSizeDepthmap + "x" + cropSizeDepthmap);
+                                            showRotationInfo(String.valueOf(sensorOrientation));
+                                            showInferenceOfDepthEstimation(lastProcessingTimeMs + "ms");
+                                        }
+                                    });
+
+                        }
                     }
                 });
+    }
+
+    @Override
+    protected void onInferenceConfigurationChanged() {
+        if (rgbFrameBitmap == null) {
+            // Defer creation until we're getting camera frames.
+            return;
+        }
+        final Device device = getDevice();
+        final Model model = getModel();
+        final int numThreads = getNumThreads();
+        runInBackground(() -> recreateDepthEstimator(model, device, numThreads));
+    }
+
+    private void recreateDepthEstimator(Model model, Device device, int numThreads) {
+        if (depthEstimator != null) {
+            LOGGER.d("Closing depthEsimator.");
+            depthEstimator.close();
+            depthEstimator = null;
+        }
+
+        try {
+            LOGGER.d(
+                    "Creating depthEstimator (device=%s, numThreads=%d)", device, numThreads);
+            depthEstimator = DepthEstimator.create(this, model, device, numThreads);
+        } catch (IOException | IllegalArgumentException e) {
+            LOGGER.e(e, "Failed to create depthEstimator.");
+            runOnUiThread(
+                    () -> {
+                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
+            return;
+        }
+
+        // Updates the input image size.
+        imageSizeX = depthEstimator.getImageSizeX();
+        imageSizeY = depthEstimator.getImageSizeY();
     }
 
     @Override

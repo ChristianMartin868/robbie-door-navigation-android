@@ -22,6 +22,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
+    <TextureView
+        android:id="@+id/textureView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
     <com.codemanufaktur.robbiebluetooth.customview.OverlayView
         android:id="@+id/tracking_overlay"
         android:layout_width="match_parent"

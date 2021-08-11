@@ -11,6 +11,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -27,16 +32,20 @@ import android.os.Trace;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
@@ -44,6 +53,10 @@ import androidx.appcompat.widget.Toolbar;
 import com.codemanufaktur.robbiebluetooth.env.ImageUtils;
 import com.codemanufaktur.robbiebluetooth.env.Logger;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+
+import org.tensorflow.lite.examples.detection.tflite.DepthEstimator;
+import org.tensorflow.lite.examples.detection.tflite.DepthEstimator.Model;
+import org.tensorflow.lite.examples.detection.tflite.DepthEstimator.Device;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +69,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         implements ImageReader.OnImageAvailableListener,
         Camera.PreviewCallback,
         CompoundButton.OnCheckedChangeListener,
-        View.OnClickListener {
+        View.OnClickListener, AdapterView.OnItemSelectedListener {
     private static final Logger LOGGER = new Logger();
 
     private static final int PERMISSIONS_REQUEST = 1;
@@ -74,6 +87,8 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     private int yRowStride;
     private Runnable postInferenceCallback;
     private Runnable imageConverter;
+    private Spinner modelSpinner;
+    private Spinner deviceSpinner;
 
     //Von MainActivity
     private static final String TAG = "MY_APP_DEBUG_TAG";
@@ -99,11 +114,16 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     private LinearLayout gestureLayout;
     private BottomSheetBehavior<LinearLayout> sheetBehavior;
 
-    protected TextView frameValueTextView, cropValueTextView, inferenceTimeTextView;
+    protected TextView frameValueTextView, frameDepthValueTextView, cropValueTextView, cropDepthValueTextView, cameraResolutionDepthTextView,
+            rotationTextView, inferenceTimeTextView, inferenceDepthTimeTextView;
     protected ImageView bottomSheetArrowImageView;
-    private ImageView plusImageView, minusImageView;
+    private ImageView plusImageView, minusImageView, plusDepthImageView, minusDepthImageView;
     private SwitchCompat apiSwitchCompat;
-    private TextView threadsTextView;
+    private TextView threadsTextView, threadsDepthTextView;
+
+    private Model model = Model.MIDAS;
+    private Device device = Device.CPU;
+    private int numThreads = -1;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -128,8 +148,11 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         //Ende MainActivity
 
         threadsTextView = findViewById(R.id.threads);
+        threadsDepthTextView = findViewById(R.id.threadsDepth);
         plusImageView = findViewById(R.id.plus);
+        plusDepthImageView = findViewById(R.id.plusDepth);
         minusImageView = findViewById(R.id.minus);
+        minusDepthImageView = findViewById(R.id.minusDepth);
         apiSwitchCompat = findViewById(R.id.api_info_switch);
         bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
         gestureLayout = findViewById(R.id.gesture_layout);
@@ -184,8 +207,14 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
                 });
 
         frameValueTextView = findViewById(R.id.frame_info);
+        frameDepthValueTextView = findViewById(R.id.frame_info_depth);
         cropValueTextView = findViewById(R.id.crop_info);
+        cropDepthValueTextView = findViewById(R.id.crop_info_depth);
+        cameraResolutionDepthTextView = findViewById(R.id.view_info_depth);
+        rotationTextView = findViewById(R.id.rotation_info_depth);
         inferenceTimeTextView = findViewById(R.id.inference_info);
+        inferenceDepthTimeTextView = findViewById(R.id.inference_info_depth);
+
 
         apiSwitchCompat.setOnCheckedChangeListener(this);
 
@@ -539,6 +568,59 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         }
     }
 
+    @UiThread
+    protected void showResultsInTexture(float[] img_array, int imageSizeX, int imageSizeY) {
+        float maxval = Float.NEGATIVE_INFINITY;
+        float minval = Float.POSITIVE_INFINITY;
+        for (float cur : img_array) {
+            maxval = Math.max(maxval, cur);
+            minval = Math.min(minval, cur);
+        }
+        float multiplier = 0;
+        if ((maxval - minval) > 0) multiplier = 255 / (maxval - minval);
+
+        int[] img_normalized = new int[img_array.length];
+        for (int i = 0; i < img_array.length; ++i) {
+            float val = (float) (multiplier * (img_array[i] - minval));
+            img_normalized[i] = (int) val;
+        }
+
+
+
+        TextureView textureView = findViewById(R.id.textureView3);
+        //AutoFitTextureView textureView = (AutoFitTextureView) findViewById(R.id.texture);
+
+        if(textureView.isAvailable()) {
+            int width = imageSizeX;
+            int height = imageSizeY;
+
+            Canvas canvas = textureView.lockCanvas();
+            canvas.drawColor(Color.BLUE);
+            Paint paint = new Paint();
+            paint.setStyle(Paint.Style.FILL);
+            paint.setARGB(255, 150, 150, 150);
+
+            int canvas_size = Math.min(canvas.getWidth(), canvas.getHeight());
+
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+
+            for (int ii = 0; ii < width; ii++) //pass the screen pixels in 2 directions
+            {
+                for (int jj = 0; jj < height; jj++) {
+                    //int val = img_normalized[ii + jj * width];
+                    int index = (width - ii - 1) + (height - jj - 1) * width;
+                    if(index < img_array.length) {
+                        int val = img_normalized[index];
+                        bitmap.setPixel(ii, jj, Color.rgb(val, val, val));
+                    }
+                }
+            }
+
+            canvas.drawBitmap(bitmap, null, new RectF(0, 0, canvas_size, canvas_size), null);
+            textureView.unlockCanvasAndPost(canvas);
+        }
+    }
+
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         setUseNNAPI(isChecked);
@@ -565,18 +647,110 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
             threadsTextView.setText(String.valueOf(numThreads));
             setNumThreads(numThreads);
         }
+
+        if (v.getId() == R.id.plusDepth) {
+            String threads = threadsDepthTextView.getText().toString().trim();
+            int numThreads = Integer.parseInt(threads);
+            if (numThreads >= 9) return;
+            numThreads++;
+            threadsDepthTextView.setText(String.valueOf(numThreads));
+            setNumThreadsForDepthEstimation(numThreads);
+        } else if (v.getId() == R.id.minusDepth) {
+            String threads = threadsDepthTextView.getText().toString().trim();
+            int numThreads = Integer.parseInt(threads);
+            if (numThreads == 1) {
+                return;
+            }
+            numThreads--;
+            threadsDepthTextView.setText(String.valueOf(numThreads));
+            setNumThreadsForDepthEstimation(numThreads);
+        }
     }
 
     protected void showFrameInfo(String frameInfo) {
         frameValueTextView.setText(frameInfo);
     }
 
+    protected void showFrameDepthInfo(String frameInfo) {
+        frameDepthValueTextView.setText(frameInfo);
+    }
+
     protected void showCropInfo(String cropInfo) {
         cropValueTextView.setText(cropInfo);
     }
 
+    protected void showCropDepthInfo(String cropInfo) {
+        cropDepthValueTextView.setText(cropInfo);
+    }
+
+    protected void showCameraResolutionOfDepthEstimation(String cameraInfo) {
+        cameraResolutionDepthTextView.setText(cameraInfo);
+    }
+
+    protected void showRotationInfo(String rotation) {
+        rotationTextView.setText(rotation);
+    }
+
     protected void showInference(String inferenceTime) {
         inferenceTimeTextView.setText(inferenceTime);
+    }
+
+    protected void showInferenceOfDepthEstimation(String inferenceTime) {
+        inferenceDepthTimeTextView.setText(inferenceTime);
+    }
+
+    protected Model getModel() {
+        return model;
+    }
+
+    private void setModel(Model model) {
+        if (this.model != model) {
+            LOGGER.d("Updating  model: " + model);
+            this.model = model;
+            onInferenceConfigurationChanged();
+        }
+    }
+
+    protected Device getDevice() {
+        return device;
+    }
+
+    private void setDevice(Device device) {
+        if (this.device != device) {
+            LOGGER.d("Updating  device: " + device);
+            this.device = device;
+            final boolean threadsEnabled = device == Device.CPU;
+            plusDepthImageView.setEnabled(threadsEnabled);
+            minusDepthImageView.setEnabled(threadsEnabled);
+            threadsDepthTextView.setText(threadsEnabled ? String.valueOf(numThreads) : "N/A");
+            onInferenceConfigurationChanged();
+        }
+    }
+
+    protected int getNumThreads() {
+        return numThreads;
+    }
+
+    private void setNumThreadsForDepthEstimation(int numThreads) {
+        if (this.numThreads != numThreads) {
+            LOGGER.d("Updating  numThreads: " + numThreads);
+            this.numThreads = numThreads;
+            onInferenceConfigurationChanged();
+        }
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+        if (parent == modelSpinner) {
+            setModel(Model.valueOf(parent.getItemAtPosition(pos).toString().toUpperCase()));
+        } else if (parent == deviceSpinner) {
+            setDevice(Device.valueOf(parent.getItemAtPosition(pos).toString()));
+        }
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+        // Do nothing.
     }
 
     protected abstract void processImage();
@@ -586,6 +760,8 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     protected abstract int getLayoutId();
 
     protected abstract Size getDesiredPreviewFrameSize();
+
+    protected abstract void onInferenceConfigurationChanged();
 
     protected abstract void setNumThreads(int numThreads);
 
