@@ -273,6 +273,38 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float [] img_array = depthEstimator.recognizeImage(rgbFrameDepthBitmap, sensorOrientation);
                             lastProcessingTimeMs = SystemClock.uptimeMillis() - startTimeDepthEstimation;
 
+                            float maxval = Float.NEGATIVE_INFINITY;
+                            float minval = Float.POSITIVE_INFINITY;
+                            for (float cur : img_array) {
+                                maxval = Math.max(maxval, cur);
+                                minval = Math.min(minval, cur);
+                            }
+                            float multiplier = 0;
+                            if ((maxval - minval) > 0) multiplier = 255 / (maxval - minval);
+
+                            int[] img_normalized = new int[img_array.length];
+                            for (int i = 0; i < img_array.length; ++i) {
+                                float val = (float) (multiplier * (img_array[i] - minval));
+                                img_normalized[i] = (int) val;
+                            }
+
+                            int width = imageSizeX;
+                            int height = imageSizeY;
+
+                            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+
+                            for (int ii = 0; ii < width; ii++) //pass the screen pixels in 2 directions
+                            {
+                                for (int jj = 0; jj < height; jj++) {
+                                    //int val = img_normalized[ii + jj * width];
+                                    int index = (width - ii - 1) + (height - jj - 1) * width;
+                                    if(index < img_array.length) {
+                                        int val = img_normalized[index];
+                                        bitmap.setPixel(ii, jj, Color.rgb(val, val, val));
+                                    }
+                                }
+                            }
+
                             computingDepth = false;
 
                             runOnUiThread(
@@ -280,7 +312,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                         @Override
                                         public void run() {
                                             //showResultsInBottomSheet(results);
-                                            showResultsInTexture(img_array, imageSizeX, imageSizeY);
+                                            showResultsInTexture(bitmap);
                                             showFrameDepthInfo(previewWidth + "x" + previewHeight);
                                             showCropDepthInfo(imageSizeX + "x" + imageSizeY);
                                             showCameraResolutionOfDepthEstimation(cropSizeDepthmap + "x" + cropSizeDepthmap);

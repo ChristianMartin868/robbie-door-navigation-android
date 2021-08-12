@@ -122,6 +122,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     private SwitchCompat apiSwitchCompat;
     private Switch previewSwitch;
     private TextView threadsTextView, threadsDepthTextView;
+    TextureView textureView;
 
     private Model model = Model.MIDAS;
     private Device device = Device.CPU;
@@ -586,55 +587,27 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     }
 
     @UiThread
-    protected void showResultsInTexture(float[] img_array, int imageSizeX, int imageSizeY) {
-        float maxval = Float.NEGATIVE_INFINITY;
-        float minval = Float.POSITIVE_INFINITY;
-        for (float cur : img_array) {
-            maxval = Math.max(maxval, cur);
-            minval = Math.min(minval, cur);
-        }
-        float multiplier = 0;
-        if ((maxval - minval) > 0) multiplier = 255 / (maxval - minval);
+    protected void showResultsInTexture(Bitmap bitmap) {
 
-        int[] img_normalized = new int[img_array.length];
-        for (int i = 0; i < img_array.length; ++i) {
-            float val = (float) (multiplier * (img_array[i] - minval));
-            img_normalized[i] = (int) val;
-        }
-
-
-
-        TextureView textureView = findViewById(R.id.textureView3);
+        textureView = findViewById(R.id.textureView3);
         //AutoFitTextureView textureView = (AutoFitTextureView) findViewById(R.id.texture);
 
         if(textureView.isAvailable()) {
-            int width = imageSizeX;
-            int height = imageSizeY;
+            if(previewSwitch.isChecked()) {
+                textureView.setVisibility(View.VISIBLE);
+                Canvas canvas = textureView.lockCanvas();
+                canvas.drawColor(Color.BLUE);
+                Paint paint = new Paint();
+                paint.setStyle(Paint.Style.FILL);
+                paint.setARGB(255, 150, 150, 150);
 
-            Canvas canvas = textureView.lockCanvas();
-            canvas.drawColor(Color.BLUE);
-            Paint paint = new Paint();
-            paint.setStyle(Paint.Style.FILL);
-            paint.setARGB(255, 150, 150, 150);
-
-            int canvas_size = Math.min(canvas.getWidth(), canvas.getHeight());
-
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-
-            for (int ii = 0; ii < width; ii++) //pass the screen pixels in 2 directions
-            {
-                for (int jj = 0; jj < height; jj++) {
-                    //int val = img_normalized[ii + jj * width];
-                    int index = (width - ii - 1) + (height - jj - 1) * width;
-                    if(index < img_array.length) {
-                        int val = img_normalized[index];
-                        bitmap.setPixel(ii, jj, Color.rgb(val, val, val));
-                    }
-                }
+                int canvas_size = Math.min(canvas.getWidth(), canvas.getHeight());
+                canvas.drawBitmap(bitmap, null, new RectF(0, 0, canvas_size, canvas_size), null);
+                textureView.unlockCanvasAndPost(canvas);
             }
-
-            canvas.drawBitmap(bitmap, null, new RectF(0, 0, canvas_size, canvas_size), null);
-            textureView.unlockCanvasAndPost(canvas);
+            if(!previewSwitch.isChecked()) {
+                textureView.setVisibility(View.INVISIBLE);
+            }
         }
     }
 
@@ -645,8 +618,10 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         else apiSwitchCompat.setText("TFLITE");
         if (buttonView.getId() == R.id.previewSwitch) {
             if (isChecked) {
+                textureView.setVisibility(View.VISIBLE);
                 Toast.makeText(getApplicationContext(), "Toggle is enabled", Toast.LENGTH_LONG).show();
             } else {
+                textureView.setVisibility(View.INVISIBLE);
                 Toast.makeText(getApplicationContext(), "Toggle is disabled", Toast.LENGTH_LONG).show();
             }
         }
