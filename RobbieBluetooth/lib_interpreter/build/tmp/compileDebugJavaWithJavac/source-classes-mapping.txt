@@ -1,7 +1,16 @@
+org/tensorflow/lite/examples/detection/tflite/DepthEstimator.java
+ org.tensorflow.lite.examples.detection.tflite.DepthEstimator
+ org.tensorflow.lite.examples.detection.tflite.DepthEstimator$1
+ org.tensorflow.lite.examples.detection.tflite.DepthEstimator$Device
+ org.tensorflow.lite.examples.detection.tflite.DepthEstimator$Model
 org/tensorflow/lite/examples/detection/tflite/TFLiteObjectDetectionAPIModel.java
  org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel
+org/tensorflow/lite/examples/detection/tflite/DepthEstimatorPyDNet.java
+ org.tensorflow.lite.examples.detection.tflite.DepthEstimatorPyDNet
 org/tensorflow/lite/examples/detection/tflite/BuildConfig.java
  org.tensorflow.lite.examples.detection.tflite.BuildConfig
 org/tensorflow/lite/examples/detection/tflite/Detector.java
  org.tensorflow.lite.examples.detection.tflite.Detector
  org.tensorflow.lite.examples.detection.tflite.Detector$Recognition
+org/tensorflow/lite/examples/detection/tflite/DepthEstimatorMidas.java
+ org.tensorflow.lite.examples.detection.tflite.DepthEstimatorMidas

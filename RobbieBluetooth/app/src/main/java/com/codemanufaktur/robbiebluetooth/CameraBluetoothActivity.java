@@ -41,6 +41,7 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -119,6 +120,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     protected ImageView bottomSheetArrowImageView;
     private ImageView plusImageView, minusImageView, plusDepthImageView, minusDepthImageView;
     private SwitchCompat apiSwitchCompat;
+    private Switch previewSwitch;
     private TextView threadsTextView, threadsDepthTextView;
 
     private Model model = Model.MIDAS;
@@ -153,7 +155,10 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         plusDepthImageView = findViewById(R.id.plusDepth);
         minusImageView = findViewById(R.id.minus);
         minusDepthImageView = findViewById(R.id.minusDepth);
+        modelSpinner = findViewById(R.id.model_spinner);
+        deviceSpinner = findViewById(R.id.device_spinner);
         apiSwitchCompat = findViewById(R.id.api_info_switch);
+        previewSwitch = findViewById(R.id.previewSwitch);
         bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
         gestureLayout = findViewById(R.id.gesture_layout);
         sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
@@ -217,9 +222,21 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
 
 
         apiSwitchCompat.setOnCheckedChangeListener(this);
+        previewSwitch.setOnCheckedChangeListener(this);
+
+        modelSpinner.setOnItemSelectedListener(this);
+        deviceSpinner.setOnItemSelectedListener(this);
 
         plusImageView.setOnClickListener(this);
         minusImageView.setOnClickListener(this);
+        plusDepthImageView.setOnClickListener(this);
+        minusDepthImageView.setOnClickListener(this);
+
+        model = Model.valueOf(modelSpinner.getSelectedItem().toString().toUpperCase());
+        device = Device.valueOf(deviceSpinner.getSelectedItem().toString());
+        numThreads = Integer.parseInt(threadsDepthTextView.getText().toString().trim());
+
+        previewSwitch.setChecked(false);
     }
 
     protected int[] getRgbBytes() {
@@ -626,6 +643,13 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         setUseNNAPI(isChecked);
         if (isChecked) apiSwitchCompat.setText("NNAPI");
         else apiSwitchCompat.setText("TFLITE");
+        if (buttonView.getId() == R.id.previewSwitch) {
+            if (isChecked) {
+                Toast.makeText(getApplicationContext(), "Toggle is enabled", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(getApplicationContext(), "Toggle is disabled", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     @Override
