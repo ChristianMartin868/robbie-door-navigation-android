@@ -283,15 +283,29 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             if ((maxval - minval) > 0) multiplier = 255 / (maxval - minval);
 
                             int[] img_normalized = new int[img_array.length];
+                            float[] img_float_normalized = new float[img_array.length];
                             for (int i = 0; i < img_array.length; ++i) {
                                 float val = (float) (multiplier * (img_array[i] - minval));
                                 img_normalized[i] = (int) val;
+                                img_float_normalized[i] = val;
                             }
 
                             int width = imageSizeX;
                             int height = imageSizeY;
 
+                            int counter = 0;
+                            int numL = 0;
+                            int numC = 0;
+                            int numR = 0;
+                            float avL;
+                            float avR;
+                            float sumL = 0.0f;
+                            float sumR = 0.0f;
+                            float T = 0.5F;
+                            float r = 0.3F;
+
                             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+                            float [] [] disparityArray = new float [height] [width];
 
                             for (int ii = 0; ii < width; ii++) //pass the screen pixels in 2 directions
                             {
@@ -300,10 +314,50 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                     int index = (width - ii - 1) + (height - jj - 1) * width;
                                     if(index < img_array.length) {
                                         int val = img_normalized[index];
+                                        float floatVal = img_float_normalized[index];
                                         bitmap.setPixel(ii, jj, Color.rgb(val, val, val));
+                                        disparityArray[jj] [ii] = floatVal;
                                     }
                                 }
                             }
+
+                            for (int ii = (int)((width-40)/3+19); ii < (int)(width-20-(width-40)/3); ii++) //read central screen pixels
+                            {
+                                for (int jj = 19; jj < height-20; jj++) {
+                                    if (disparityArray[jj] [ii] > T) {
+                                        counter++;
+                                    }
+                                    numC++;
+                                }
+                            }
+
+                            if (counter < (r * numC)) {
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                            } else {
+                                for (int ii = 19; ii < (int)((width-40)/3+19); ii++) //read left screen pixels
+                                {
+                                    for (int jj = 19; jj < height-20; jj++) {
+                                        sumL = disparityArray[jj] [ii];
+                                        numL++;
+                                    }
+                                }
+
+                                for (int ii = (int)(width-20-(width-40)/3); ii < (width-20); ii++) //read right screen pixels
+                                {
+                                    for (int jj = 19; jj < height-20; jj++) {
+                                        sumR =+ disparityArray[jj] [ii];
+                                        numR++;
+                                    }
+                                }
+                                avL = sumL / numL;
+                                avR = sumR / numR;
+                                if (avL < avR) {
+                                    mysendAutomat.setNewCommand(mysendAutomat.cmdlefttra);
+                                } else {
+                                    mysendAutomat.setNewCommand(mysendAutomat.cmdrighttra);
+                                }
+                            }
+
 
                             computingDepth = false;
 
