@@ -34,6 +34,7 @@ import java.util.List;
 
 public class MainActivity extends CameraBluetoothActivity implements ImageReader.OnImageAvailableListener {
     private static final Logger LOGGER = new Logger();
+    public String obstacleMessage = "";
 
     // Configuration values for the prepackaged SSD model.
     private static final int TF_OD_API_INPUT_SIZE = 320;
@@ -225,6 +226,62 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                         if(tracker.commandMessage != "") {
                             Toast.makeText(getApplicationContext(), tracker.commandMessage, Toast.LENGTH_LONG).show();
                         }
+
+                        switch (mealyAutomat.getState()){
+                            case "Left turn":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+                                break;
+                            case "Right turn":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
+                                break;
+                            case "Stop":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                                break;
+                            case "Forward":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                                break;
+                            case "Error":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                                break;
+                        }
+
+                        if (tracker.commandMessage == "No Door" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("No door");
+                        }
+
+                        if (tracker.commandMessage == "Door" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("Door not reached and no obstacle");
+                        }
+
+                        if (tracker.commandMessage == "Door not reached" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("Door not reached and no obstacle");
+                        }
+
+                        if (tracker.commandMessage == "Door left" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("Door is left, not reached and no obstacle");
+                        }
+
+                        if (tracker.commandMessage == "Door right" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("Door is right, not reached and no obstacle");
+                        }
+
+                        if (tracker.commandMessage == "Door reached") {
+                            mealyAutomat.input("Door reached");
+                        }
+
+                        if (obstacleMessage == "Obstacle") {
+                            mealyAutomat.input("Obstacle");
+                        }
+
+                        if (obstacleMessage == "Obstacle left") {
+                            mealyAutomat.input("Obstacle left");
+                        }
+
+                        if (obstacleMessage == "Obstacle right") {
+                            mealyAutomat.input("Obstacle right");
+                        }
+
+                        /*
                         switch (tracker.commandMessage){
                             case "some1":
                                 mysendAutomat.setNewCommand(mysendAutomat.cmdsome1);
@@ -254,6 +311,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                 mysendAutomat.setNewCommand(mysendAutomat.cmdwheelaction);
                                 break;
                         }
+                         */
                         trackingOverlay.postInvalidate();
 
                         computingDetection = false;
@@ -332,8 +390,9 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             }
 
                             if (counter < (r * numC)) {
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                                obstacleMessage = "No obstacle";
                             } else {
+                                obstacleMessage = "Obstacle";
                                 for (int ii = 19; ii < (int)((width-40)/3+19); ii++) //read left screen pixels
                                 {
                                     for (int jj = 19; jj < height-20; jj++) {
@@ -352,9 +411,9 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                 avL = sumL / numL;
                                 avR = sumR / numR;
                                 if (avL < avR) {
-                                    mysendAutomat.setNewCommand(mysendAutomat.cmdlefttra);
+                                    obstacleMessage = "Obstacle right";
                                 } else {
-                                    mysendAutomat.setNewCommand(mysendAutomat.cmdrighttra);
+                                    obstacleMessage = "Obstacle left";
                                 }
                             }
 

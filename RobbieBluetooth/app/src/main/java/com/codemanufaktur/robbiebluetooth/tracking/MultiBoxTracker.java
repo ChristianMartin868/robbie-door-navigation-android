@@ -180,7 +180,7 @@ public class MultiBoxTracker {
         trackedObjects.clear();
         if (rectsToTrack.isEmpty()) {
             logger.v("Nothing to track, aborting.");
-            commandMessage = "Left turn";
+            commandMessage = "No Door";
 
             return;
         }
@@ -202,18 +202,19 @@ public class MultiBoxTracker {
         for (TrackedRecognition recogElement : trackedObjects) {
             Log.d("Maxwidth", "maxwidth: " + maxWidth + " maxHeight: " + maxHeight);
             if(recogElement.title.equals("Door")) {
+                commandMessage = "Door";
                 final RectF detectionScreenRectNav = new RectF();
                 rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
                 Log.d("Screen width", "Screen width: " + detectionScreenRectNav.width());
                 if(detectionScreenRectNav.width() < (maxWidth * 0.6)) {
-                    commandMessage = "Forward";
+                    commandMessage = "Door not reached";
                 } else if(detectionScreenRectNav.width() > (maxWidth * 0.6)) {
-                    commandMessage = "Stop";
+                    commandMessage = "Door reached";
                 }
                 if ((detectionScreenRectNav.centerX() < (maxWidth / 4)) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    commandMessage = "Left turn";
+                    commandMessage = "Door left";
                 } else if (detectionScreenRectNav.centerX() > (maxWidth * 0.75) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    commandMessage = "Right turn";
+                    commandMessage = "Door right";
                 }
                 //For horizontal orientation with frame:
                 /*
