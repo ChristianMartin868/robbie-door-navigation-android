@@ -223,63 +223,12 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                         }
 
                         tracker.trackResults(mappedRecognitions, currTimestamp);
+                        /*
                         if(tracker.commandMessage != "") {
                             Toast.makeText(getApplicationContext(), tracker.commandMessage, Toast.LENGTH_LONG).show();
                         }
 
-                        switch (mealyAutomat.getState()){
-                            case "Left turn":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
-                                break;
-                            case "Right turn":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
-                                break;
-                            case "Stop":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
-                                break;
-                            case "Forward":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
-                                break;
-                            case "Error":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
-                                break;
-                        }
-
-                        if (tracker.commandMessage == "No Door" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("No door");
-                        }
-
-                        if (tracker.commandMessage == "Door" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("Door not reached and no obstacle");
-                        }
-
-                        if (tracker.commandMessage == "Door not reached" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("Door not reached and no obstacle");
-                        }
-
-                        if (tracker.commandMessage == "Door left" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("Door is left, not reached and no obstacle");
-                        }
-
-                        if (tracker.commandMessage == "Door right" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("Door is right, not reached and no obstacle");
-                        }
-
-                        if (tracker.commandMessage == "Door reached") {
-                            mealyAutomat.input("Door reached");
-                        }
-
-                        if (obstacleMessage == "Obstacle") {
-                            mealyAutomat.input("Obstacle");
-                        }
-
-                        if (obstacleMessage == "Obstacle left") {
-                            mealyAutomat.input("Obstacle left");
-                        }
-
-                        if (obstacleMessage == "Obstacle right") {
-                            mealyAutomat.input("Obstacle right");
-                        }
+                         */
 
                         /*
                         switch (tracker.commandMessage){
@@ -434,6 +383,68 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                         }
                                     });
 
+                        }
+
+                        if (tracker.commandMessage == "No Door" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("No door");
+                        }
+
+                        if (tracker.commandMessage == "Door" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("Door not reached and no obstacle");
+                        }
+
+                        if (tracker.commandMessage == "Door not reached" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("Door not reached and no obstacle");
+                        }
+
+                        if (tracker.commandMessage == "Door left" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("Door is left, not reached and no obstacle");
+                        }
+
+                        if (tracker.commandMessage == "Door right" && obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("Door is right, not reached and no obstacle");
+                        }
+
+                        if (tracker.commandMessage == "Door reached") {
+                            mealyAutomat.input("Door reached");
+                        }
+
+                        if (obstacleMessage == "Obstacle") {
+                            mealyAutomat.input("Obstacle");
+                        }
+
+                        if (obstacleMessage == "No obstacle") {
+                            mealyAutomat.input("No obstacle");
+                        }
+
+                        if (obstacleMessage == "Obstacle left") {
+                            mealyAutomat.input("Obstacle left");
+                        }
+
+                        if (obstacleMessage == "Obstacle right") {
+                            mealyAutomat.input("Obstacle right");
+                        }
+
+                        switch (mealyAutomat.getState()){
+                            case "Left turn":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+                                break;
+                            case "Right turn":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
+                                break;
+                            case "Stop":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                                break;
+                            case "Forward":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                                break;
+                            case "Error":
+                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                                break;
+                        }
+
+                        if(mealyAutomat.getState() != "") {
+                            Toast.makeText(getApplicationContext(), mealyAutomat.getState(), Toast.LENGTH_LONG).show();
                         }
                     }
                 });

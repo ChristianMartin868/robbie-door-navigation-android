@@ -1,5 +1,6 @@
 package com.codemanufaktur.robbiebluetooth;
 
+import android.os.CountDownTimer;
 import android.os.SystemClock;
 
 public class Automat {
@@ -23,7 +24,7 @@ public class Automat {
                 break;
             case 1:
                 if (in == "Door not reached and no obstacle") {
-                    state = "Foward";
+                    state = "Forward";
                 }
                 else if (in == "Door is left, not reached and no obstacle") {
                     state = "Left turn";
@@ -42,26 +43,37 @@ public class Automat {
             case 2:
                 if (in == "Obstacle") {
                     state = "Stop";
+                    //state = "Stop obstacle";
                 }
                 else if (in == "Obstacle left") {
                     state = "Right turn";
+                    //state = "Right turn to avoid obstacle";
                 }
                 else if (in == "Obstacle right") {
                     state = "Left turn";
+                    //state = "Left turn to avoid obstacle";
                 }
                 else {
                     number = 3;
                     state = "Forward";
+                    //state = "Forward to pass obstacle";
                 }
                 break;
             case 3:
-                final long startTime = SystemClock.uptimeMillis();
-                if ((SystemClock.uptimeMillis() - startTime > 2000)) {
-                    number = 0;
-                    state = "Left turn";
-                } else {
-                    state = "Forward";
-                }
+                //Count Down Timer to pass obstacle
+                new CountDownTimer(3000, 1000) {
+
+                    public void onTick(long millisUntilFinished) {
+                        state = "Forward";
+                        //state = "Cas3 - Forward to pass obstacle";
+                    }
+
+                    public void onFinish() {
+                        number = 0;
+                        state = "Left turn";
+                        //state = "Left turn we are behind obstacle";
+                    }
+                }.start();
                 break;
             case 4:
                 state = "Stop";
