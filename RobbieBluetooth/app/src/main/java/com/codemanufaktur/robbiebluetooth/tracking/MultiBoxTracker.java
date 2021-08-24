@@ -180,7 +180,7 @@ public class MultiBoxTracker {
         trackedObjects.clear();
         if (rectsToTrack.isEmpty()) {
             logger.v("Nothing to track, aborting.");
-            commandMessage = "No Door";
+            commandMessage = "No door";
 
             return;
         }
@@ -202,7 +202,6 @@ public class MultiBoxTracker {
         for (TrackedRecognition recogElement : trackedObjects) {
             Log.d("Maxwidth", "maxwidth: " + maxWidth + " maxHeight: " + maxHeight);
             if(recogElement.title.equals("Door")) {
-                commandMessage = "Door";
                 final RectF detectionScreenRectNav = new RectF();
                 rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
                 Log.d("Screen width", "Screen width: " + detectionScreenRectNav.width());

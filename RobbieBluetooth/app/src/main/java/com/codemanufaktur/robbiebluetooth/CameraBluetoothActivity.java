@@ -99,7 +99,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     UUID MY_UUID = new UUID(285278208, 64532);
 
     private Handler timeHandler = new Handler();
-    public Automat mealyAutomat = new Automat();
+    public Automat automat = new Automat();
     public sendAutomat mysendAutomat = new sendAutomat();
 
     CameraBluetoothActivity.ConnectThread btConnectThread;

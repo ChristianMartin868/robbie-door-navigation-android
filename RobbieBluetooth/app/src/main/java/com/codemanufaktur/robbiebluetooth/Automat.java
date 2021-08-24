@@ -4,92 +4,105 @@ import android.os.CountDownTimer;
 import android.os.SystemClock;
 
 public class Automat {
-    int number;
-    String state;
+    State state;
+    String command;
+    long stateStartTime;
 
     public Automat() {
-        number = 0;
-        state = "Left turn";
+        state = State.START;
+        command = "Left turn";
     }
 
-    public void input(String in) {
-        switch (number) {
-            case 0:
-                if (in == "No door") {
-                    state = "Left turn";
-                } else {
-                    number = 1;
-                    state = "Forward";
+    public void input(String target, String obstacleTarget) {
+        switch (state) {
+            case START:
+                if (target == "No door") {
+                    setState(State.START);
+                    command = "Left turn";
+                }
+                else {
+                    setState(State.DOOR);
+                    command = "Forward";
                 }
                 break;
-            case 1:
-                if (in == "Door not reached and no obstacle") {
-                    state = "Forward";
+            case DOOR:
+                if ((target == "Door not reached") && (obstacleTarget == "No obstacle")) {
+                    setState(State.DOOR);
+                    command = "Forward";
                 }
-                else if (in == "Door is left, not reached and no obstacle") {
-                    state = "Left turn";
+                else if ((target == "Door is left") && (obstacleTarget == "No obstacle")) {
+                    setState(State.DOOR);
+                    command = "Left turn";
                 }
-                else if (in == "Door is right, not reached and no obstacle") {
-                    state = "Right turn";
+                else if ((target == "Door is right") && (obstacleTarget == "No obstacle")) {
+                    setState(State.DOOR);
+                    command = "Right turn";
                 }
-                else if (in == "Door reached") {
-                    number = 4;
-                    state = "Stop";
-                } else {
-                    number = 2;
-                    state = "Stop";
+                else if (target == "Door reached") {
+                    setState(State.END);
+                    command = "Stop";
+                }
+                if ((obstacleTarget == "Obstacle left") || (obstacleTarget == "Obstacle right")) {
+                    setState(State.OBSTACLE);
+                    command = "Stop";
                 }
                 break;
-            case 2:
-                if (in == "Obstacle") {
-                    state = "Stop";
-                    //state = "Stop obstacle";
-                }
-                else if (in == "Obstacle left") {
-                    state = "Right turn";
+            case OBSTACLE:
+                if (target == "Obstacle left") {
+                    setState(State.OBSTACLE);
+                    command = "Right turn";
                     //state = "Right turn to avoid obstacle";
                 }
-                else if (in == "Obstacle right") {
-                    state = "Left turn";
+                else if (target == "Obstacle right") {
+                    setState(State.OBSTACLE);
+                    command = "Left turn";
                     //state = "Left turn to avoid obstacle";
                 }
                 else {
-                    number = 3;
-                    state = "Forward";
+                    setState(State.PASSOBSTACLE);
+                    command = "Forward";
                     //state = "Forward to pass obstacle";
                 }
                 break;
-            case 3:
+            case PASSOBSTACLE:
                 //Count Down Timer to pass obstacle
-                new CountDownTimer(3000, 1000) {
-
-                    public void onTick(long millisUntilFinished) {
-                        state = "Forward";
-                        //state = "Cas3 - Forward to pass obstacle";
-                    }
-
-                    public void onFinish() {
-                        number = 0;
-                        state = "Left turn";
-                        //state = "Left turn we are behind obstacle";
-                    }
-                }.start();
+                if (obstacleTarget == "No obstacle") {
+                    command = "Forward";
+                    //state = "Cas3 - Forward to pass obstacle";
+                }
+                else {
+                    setState(State.OBSTACLE);
+                    command = "Stop";
+                }
+                if (getStateTimeMs() > 3000) {
+                    setState(State.START);
+                    command = "Left turn";
+                }
                 break;
-            case 4:
-                state = "Stop";
+            case END:
+                command = "Stop";
                 break;
             default:
                 System.out.println("error");
-                state = "Error";
+                command = "Error";
                 break;
         }
     }
 
-    public int getNumber() {
-        return number;
+    private void setState(State newState) {
+        stateStartTime = System.currentTimeMillis();
+        state = newState;
     }
 
-    public String getState() {
+    private long getStateTimeMs() {
+        return System.currentTimeMillis() - stateStartTime;
+    }
+
+    public State getState() {
         return state;
+    }
+
+    public String getCommand() {
+        return command;
     }
 }

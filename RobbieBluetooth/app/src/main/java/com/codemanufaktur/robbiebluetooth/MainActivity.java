@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader;
+import android.os.CountDownTimer;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
@@ -275,6 +276,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                     }
                                 });
 
+
                         if (depthEstimator != null) {
                             final long startTimeDepthEstimation = SystemClock.uptimeMillis();
                             float [] img_array = depthEstimator.recognizeImage(rgbFrameDepthBitmap, sensorOrientation);
@@ -308,7 +310,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float avR;
                             float sumL = 0.0f;
                             float sumR = 0.0f;
-                            float T = 0.5F;
+                            //float T = 0.9F;
+                            int T = 120;
                             float r = 0.3F;
 
                             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
@@ -331,7 +334,12 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             for (int ii = (int)((width-40)/3+19); ii < (int)(width-20-(width-40)/3); ii++) //read central screen pixels
                             {
                                 for (int jj = 19; jj < height-20; jj++) {
+                                    /*
                                     if (disparityArray[jj] [ii] > T) {
+                                        counter++;
+                                    }
+                                     */
+                                    if (Color.red(bitmap.getPixel(ii, jj)) > T) {
                                         counter++;
                                     }
                                     numC++;
@@ -341,11 +349,11 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             if (counter < (r * numC)) {
                                 obstacleMessage = "No obstacle";
                             } else {
-                                obstacleMessage = "Obstacle";
                                 for (int ii = 19; ii < (int)((width-40)/3+19); ii++) //read left screen pixels
                                 {
                                     for (int jj = 19; jj < height-20; jj++) {
-                                        sumL = disparityArray[jj] [ii];
+                                        //sumL = disparityArray[jj] [ii];
+                                        sumL =+ Color.red(bitmap.getPixel(ii, jj));
                                         numL++;
                                     }
                                 }
@@ -353,7 +361,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                 for (int ii = (int)(width-20-(width-40)/3); ii < (width-20); ii++) //read right screen pixels
                                 {
                                     for (int jj = 19; jj < height-20; jj++) {
-                                        sumR =+ disparityArray[jj] [ii];
+                                        //sumR =+ disparityArray[jj] [ii];
+                                        sumR =+ Color.red(bitmap.getPixel(ii, jj));
                                         numR++;
                                     }
                                 }
@@ -383,49 +392,15 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                         }
                                     });
 
+                            //Toast.makeText(getApplicationContext(), "Counter + r*numC: " + String.valueOf(counter) + " < " + String.valueOf((r * numC)), Toast.LENGTH_LONG).show();
+
                         }
 
-                        if (tracker.commandMessage == "No Door" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("No door");
-                        }
+                        String command = "Default";
 
-                        if (tracker.commandMessage == "Door" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("Door not reached and no obstacle");
-                        }
+                        automat.input(tracker.commandMessage, obstacleMessage);
 
-                        if (tracker.commandMessage == "Door not reached" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("Door not reached and no obstacle");
-                        }
-
-                        if (tracker.commandMessage == "Door left" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("Door is left, not reached and no obstacle");
-                        }
-
-                        if (tracker.commandMessage == "Door right" && obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("Door is right, not reached and no obstacle");
-                        }
-
-                        if (tracker.commandMessage == "Door reached") {
-                            mealyAutomat.input("Door reached");
-                        }
-
-                        if (obstacleMessage == "Obstacle") {
-                            mealyAutomat.input("Obstacle");
-                        }
-
-                        if (obstacleMessage == "No obstacle") {
-                            mealyAutomat.input("No obstacle");
-                        }
-
-                        if (obstacleMessage == "Obstacle left") {
-                            mealyAutomat.input("Obstacle left");
-                        }
-
-                        if (obstacleMessage == "Obstacle right") {
-                            mealyAutomat.input("Obstacle right");
-                        }
-
-                        switch (mealyAutomat.getState()){
+                        switch (automat.getCommand()){
                             case "Left turn":
                                 mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
                                 break;
@@ -443,9 +418,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                 break;
                         }
 
-                        if(mealyAutomat.getState() != "") {
-                            Toast.makeText(getApplicationContext(), mealyAutomat.getState(), Toast.LENGTH_LONG).show();
-                        }
+                        Toast.makeText(getApplicationContext(), String.valueOf(automat.getState()), Toast.LENGTH_LONG).show();
                     }
                 });
     }
