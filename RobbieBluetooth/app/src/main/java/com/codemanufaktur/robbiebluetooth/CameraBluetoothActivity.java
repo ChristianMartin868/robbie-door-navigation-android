@@ -29,6 +29,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.ParcelUuid;
 import android.os.Trace;
+import static android.os.Looper.loop;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
@@ -64,6 +65,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 public abstract class CameraBluetoothActivity extends AppCompatActivity
@@ -80,6 +83,8 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     protected int previewHeight = 0;
     private boolean debug = false;
     private Handler handler;
+    private Timer mTimer;
+    public static final int LOOP_INTERVAL_MS = 100;
     private HandlerThread handlerThread;
     private boolean useCamera2API;
     private boolean isProcessingFrame = false;
@@ -134,6 +139,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         LOGGER.d("onCreate " + this);
         super.onCreate(null);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        automat.setState(State.START);
 
         setContentView(R.layout.activity_camera);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -367,6 +373,18 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     public synchronized void onStart() {
         LOGGER.d("onStart " + this);
         super.onStart();
+        mTimer = new Timer();
+        mTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loop();
+                    }
+                });
+            }
+        }, 0, LOOP_INTERVAL_MS);
     }
 
     @Override
@@ -399,6 +417,8 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     public synchronized void onStop() {
         LOGGER.d("onStop " + this);
         super.onStop();
+        mTimer.cancel();
+        mTimer = null;
     }
 
     @Override
@@ -752,6 +772,8 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     public void onNothingSelected(AdapterView<?> parent) {
         // Do nothing.
     }
+
+    protected abstract void loop();
 
     protected abstract void processImage();
 

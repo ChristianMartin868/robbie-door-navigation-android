@@ -264,7 +264,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                          */
                         trackingOverlay.postInvalidate();
 
-                        computingDetection = false;
+                        //computingDetection = false;
 
                         runOnUiThread(
                                 new Runnable() {
@@ -376,7 +376,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             }
 
 
-                            computingDepth = false;
+                            //computingDetection = false;
+                            //computingDepth = false;
 
                             runOnUiThread(
                                     new Runnable() {
@@ -396,8 +397,6 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
 
                         }
 
-                        String command = "Default";
-
                         automat.input(tracker.commandMessage, obstacleMessage);
 
                         switch (automat.getCommand()){
@@ -408,19 +407,43 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                 mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
                                 break;
                             case "Stop":
+                            case "Error":
                                 mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
                                 break;
                             case "Forward":
                                 mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
                                 break;
-                            case "Error":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
-                                break;
                         }
 
+                        //Toast.makeText(getApplicationContext(), obstacleMessage, Toast.LENGTH_LONG).show();
+                        //Toast.makeText(getApplicationContext(), automat.getCommand(), Toast.LENGTH_LONG).show();
                         Toast.makeText(getApplicationContext(), String.valueOf(automat.getState()), Toast.LENGTH_LONG).show();
+                        computingDetection = false;
+                        computingDepth = false;
                     }
                 });
+    }
+
+    @Override
+    protected void loop() {
+        switch(automat.getState()) {
+            case PASSOBSTACLE:
+                if (automat.getStateTimeMs() < 3000) {
+                    if (obstacleMessage == "No obstacle") {
+                        automat.command = "Forward";
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                    } else {
+                        automat.command = "Stop";
+                        mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                        automat.setState(State.OBSTACLE);
+                    }
+                }
+                else if (automat.getStateTimeMs() > 3000) {
+                    automat.command = "Left turn";
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+                    automat.setState(State.START);
+                }
+        }
     }
 
     @Override
