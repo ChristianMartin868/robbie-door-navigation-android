@@ -314,8 +314,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float sumL = 0.0f;
                             float sumR = 0.0f;
                             //float T = 0.9F;
-                            int T = 150;
-                            float r = 0.3F;
+                            int T = 160;
+                            float r = 0.2F;
 
                             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
                             float [] [] disparityArray = new float [height] [width];
@@ -435,7 +435,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                     }
                     else if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
                         obstacleCounter++;
-                        if (obstacleCounter > 5) {
+                        if (obstacleCounter > 3) {
                             automat.setState(State.OBSTACLE);
                         }
                     }
@@ -462,7 +462,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                         if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
                             obstacleCounter++;
                             command = "Forward";
-                            if (obstacleCounter > 5) {
+                            if (obstacleCounter > 3) {
                                 command = "Stop";
                                 automat.setState(State.OBSTACLE);
                             }
