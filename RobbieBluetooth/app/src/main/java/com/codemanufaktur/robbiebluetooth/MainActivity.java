@@ -37,6 +37,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
     private static final Logger LOGGER = new Logger();
     public String obstacleMessage = "";
     public String command = "" ;
+    public String obstacleCommand = "";
+    public int obstacleCounter = 0;
 
     // Configuration values for the prepackaged SSD model.
     private static final int TF_OD_API_INPUT_SIZE = 320;
@@ -312,8 +314,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float sumL = 0.0f;
                             float sumR = 0.0f;
                             //float T = 0.9F;
-                            int T = 180;
-                            float r = 0.2F;
+                            int T = 150;
+                            float r = 0.3F;
 
                             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
                             float [] [] disparityArray = new float [height] [width];
@@ -384,7 +386,6 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                     new Runnable() {
                                         @Override
                                         public void run() {
-                                            //showResultsInBottomSheet(results);
                                             showResultsInTexture(bitmap);
                                             showFrameDepthInfo(previewWidth + "x" + previewHeight);
                                             showCropDepthInfo(imageSizeX + "x" + imageSizeY);
@@ -433,10 +434,14 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                         automat.setState(State.END);
                     }
                     else if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
-                        automat.setState(State.OBSTACLE);
+                        obstacleCounter++;
+                        if (obstacleCounter > 5) {
+                            automat.setState(State.OBSTACLE);
+                        }
                     }
                     break;
                 case OBSTACLE:
+                    obstacleCounter = 0;
                     command = "Stop";
                     if (obstacleMessage == "No obstacle") {
                         automat.setState(State.PASSOBSTACLE);
@@ -444,23 +449,44 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                     else {
                         if (obstacleMessage == "Obstacle left") {
                             command = "Right turn";
+                            obstacleCommand = "Right turn";
                         }
                         else if (obstacleMessage == "Obstacle right") {
                             command = "Left turn";
+                            obstacleCommand = "Left turn";
                         }
                     }
                     break;
                 case PASSOBSTACLE:
                     if (automat.getStateTimeMs() < 2000) {
-                        if (obstacleMessage == "No obstacle") {
+                        if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
+                            obstacleCounter++;
                             command = "Forward";
+                            if (obstacleCounter > 5) {
+                                command = "Stop";
+                                automat.setState(State.OBSTACLE);
+                            }
                         } else {
-                            automat.setState(State.OBSTACLE);
+                            command = "Forward";
                         }
                     }
                     else if (automat.getStateTimeMs() > 2000) {
                         command = "Stop";
-                        automat.setState(State.START);
+                        automat.setState(State.FINDDOORAGAIN);
+                    }
+                    break;
+                case FINDDOORAGAIN:
+                    obstacleCounter = 0;
+                    if (tracker.commandMessage == "No door") {
+                        if (obstacleCommand == "Right turn") {
+                            command = "Left turn";
+                        }
+                        else if (obstacleCommand == "Left turn") {
+                            command = "Right turn";
+                        }
+                    }
+                    else {
+                        automat.setState(State.DOOR);
                     }
                     break;
                 case END:
