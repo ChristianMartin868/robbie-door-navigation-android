@@ -22,23 +22,6 @@ public class Automat {
     public void input(String _target, String _obstacleTarget) {
         target = _target;
         obstacleTarget = _obstacleTarget;
-
-        switch (state) {
-            case START:
-                initialize();
-                break;
-            case DOOR:
-                toDoor();
-                break;
-            case OBSTACLE:
-                obstacleAvoidance();
-                break;
-            case PASSOBSTACLE:
-                break;
-            case END:
-                end();
-                break;
-        }
     }
 
     public void setState(State newState) {
@@ -49,10 +32,8 @@ public class Automat {
                 initialize();
                 break;
             case DOOR:
-                toDoor();
                 break;
             case OBSTACLE:
-                obstacleAvoidance();
                 break;
             case PASSOBSTACLE:
                 break;
@@ -75,49 +56,12 @@ public class Automat {
         return state;
     }
 
-    public String getCommand() {
-        return command;
-    }
-
     public void initialize() {
         if (target == "No door") {
             command = "Left turn";
         }
         else {
             setState(State.DOOR);
-        }
-    }
-
-    public void toDoor() {
-        if ((target == "Door not reached") && (obstacleTarget == "No obstacle")) {
-            command = "Forward";
-        }
-        else if ((target == "Door is left") && (obstacleTarget == "No obstacle")) {
-            command = "Left turn";
-        }
-        else if ((target == "Door is right") && (obstacleTarget == "No obstacle")) {
-            command = "Right turn";
-        }
-        else if (target == "Door reached") {
-            command = "Stop";
-            setState(State.END);
-        }
-        else if ((obstacleTarget == "Obstacle left") || (obstacleTarget == "Obstacle right")) {
-            setState(State.OBSTACLE);
-        }
-    }
-
-    public void obstacleAvoidance() {
-        if (target == "Obstacle left") {
-            command = "Right turn";
-            //state = "Right turn to avoid obstacle";
-        }
-        else if (target == "Obstacle right") {
-            command = "Left turn";
-            //state = "Left turn to avoid obstacle";
-        }
-        else {
-            setState(State.PASSOBSTACLE);
         }
     }
 

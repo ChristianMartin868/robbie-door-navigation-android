@@ -106,6 +106,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     private Handler timeHandler = new Handler();
     public Automat automat = new Automat();
     public sendAutomat mysendAutomat = new sendAutomat();
+    public double timerCounterLoop;
 
     CameraBluetoothActivity.ConnectThread btConnectThread;
     CameraBluetoothActivity.ConnectedThread myBTconnectedThread;
@@ -140,6 +141,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         super.onCreate(null);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         automat.setState(State.START);
+        timerCounterLoop = 0.0;
 
         setContentView(R.layout.activity_camera);
         Toolbar toolbar = findViewById(R.id.toolbar);

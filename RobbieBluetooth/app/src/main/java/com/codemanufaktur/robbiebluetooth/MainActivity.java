@@ -36,6 +36,7 @@ import java.util.List;
 public class MainActivity extends CameraBluetoothActivity implements ImageReader.OnImageAvailableListener {
     private static final Logger LOGGER = new Logger();
     public String obstacleMessage = "";
+    public String command = "" ;
 
     // Configuration values for the prepackaged SSD model.
     private static final int TF_OD_API_INPUT_SIZE = 320;
@@ -311,8 +312,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float sumL = 0.0f;
                             float sumR = 0.0f;
                             //float T = 0.9F;
-                            int T = 120;
-                            float r = 0.3F;
+                            int T = 180;
+                            float r = 0.2F;
 
                             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
                             float [] [] disparityArray = new float [height] [width];
@@ -396,28 +397,6 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             //Toast.makeText(getApplicationContext(), "Counter + r*numC: " + String.valueOf(counter) + " < " + String.valueOf((r * numC)), Toast.LENGTH_LONG).show();
 
                         }
-
-                        automat.input(tracker.commandMessage, obstacleMessage);
-
-                        switch (automat.getCommand()){
-                            case "Left turn":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
-                                break;
-                            case "Right turn":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
-                                break;
-                            case "Stop":
-                            case "Error":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
-                                break;
-                            case "Forward":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
-                                break;
-                        }
-
-                        //Toast.makeText(getApplicationContext(), obstacleMessage, Toast.LENGTH_LONG).show();
-                        //Toast.makeText(getApplicationContext(), automat.getCommand(), Toast.LENGTH_LONG).show();
-                        Toast.makeText(getApplicationContext(), String.valueOf(automat.getState()), Toast.LENGTH_LONG).show();
                         computingDetection = false;
                         computingDepth = false;
                     }
@@ -426,23 +405,89 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
 
     @Override
     protected void loop() {
-        switch(automat.getState()) {
-            case PASSOBSTACLE:
-                if (automat.getStateTimeMs() < 3000) {
-                    if (obstacleMessage == "No obstacle") {
-                        automat.command = "Forward";
-                        mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
-                    } else {
-                        automat.command = "Stop";
-                        mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+
+        timerCounterLoop++;
+        if (tracker != null && tracker.commandMessage!= null && obstacleMessage != "") {
+            automat.input(tracker.commandMessage, obstacleMessage);
+
+            switch(automat.getState()) {
+                case START:
+                    if (tracker.commandMessage == "No door") {
+                        command = "Left turn";
+                    }
+                    else {
+                        automat.setState(State.DOOR);
+                    }
+                    break;
+                case DOOR:
+                    if ((tracker.commandMessage == "Door not reached") && (obstacleMessage == "No obstacle")) {
+                        command = "Forward";
+                    }
+                    else if ((tracker.commandMessage == "Door left") && (obstacleMessage == "No obstacle")) {
+                        command = "Left turn";
+                    }
+                    else if ((tracker.commandMessage == "Door right") && (obstacleMessage == "No obstacle")) {
+                        command = "Right turn";
+                    }
+                    else if (tracker.commandMessage == "Door reached") {
+                        automat.setState(State.END);
+                    }
+                    else if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
                         automat.setState(State.OBSTACLE);
                     }
-                }
-                else if (automat.getStateTimeMs() > 3000) {
-                    automat.command = "Left turn";
+                    break;
+                case OBSTACLE:
+                    command = "Stop";
+                    if (obstacleMessage == "No obstacle") {
+                        automat.setState(State.PASSOBSTACLE);
+                    }
+                    else {
+                        if (obstacleMessage == "Obstacle left") {
+                            command = "Right turn";
+                        }
+                        else if (obstacleMessage == "Obstacle right") {
+                            command = "Left turn";
+                        }
+                    }
+                    break;
+                case PASSOBSTACLE:
+                    if (automat.getStateTimeMs() < 2000) {
+                        if (obstacleMessage == "No obstacle") {
+                            command = "Forward";
+                        } else {
+                            automat.setState(State.OBSTACLE);
+                        }
+                    }
+                    else if (automat.getStateTimeMs() > 2000) {
+                        command = "Stop";
+                        automat.setState(State.START);
+                    }
+                    break;
+                case END:
+                    command = "Stop";
+                    automat.command = "Stop";
+                    break;
+            }
+
+            switch (command){
+                case "Left turn":
                     mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
-                    automat.setState(State.START);
-                }
+                    break;
+                case "Right turn":
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
+                    break;
+                case "Stop":
+                case "Error":
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                    break;
+                case "Forward":
+                    mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                    break;
+            }
+            //Toast.makeText(getApplicationContext(), obstacleMessage, Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(), command, Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), String.valueOf(automat.getState()), Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(), String.valueOf(automat.getStateTimeMs()/1000), Toast.LENGTH_LONG).show();
         }
     }
 
