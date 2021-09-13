@@ -424,16 +424,16 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                     if ((tracker.commandMessage == "Door not reached") && (obstacleMessage == "No obstacle")) {
                         command = "Forward";
                     }
-                    else if ((tracker.commandMessage == "Door left") && (obstacleMessage == "No obstacle")) {
+                    else if (tracker.commandMessage == "Door reached") {
+                        automat.setState(State.END);
+                    }
+                    if ((tracker.commandMessage == "Door left") && (obstacleMessage == "No obstacle")) {
                         command = "Left turn";
                     }
                     else if ((tracker.commandMessage == "Door right") && (obstacleMessage == "No obstacle")) {
                         command = "Right turn";
                     }
-                    else if (tracker.commandMessage == "Door reached") {
-                        automat.setState(State.END);
-                    }
-                    else if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
+                    if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
                         obstacleCounter++;
                         if (obstacleCounter > 3) {
                             automat.setState(State.OBSTACLE);

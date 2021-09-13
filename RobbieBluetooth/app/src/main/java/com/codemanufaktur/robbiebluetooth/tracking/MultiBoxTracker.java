@@ -230,7 +230,8 @@ public class MultiBoxTracker {
                     commandMessage = "Right turn";
                 } else if (detectionScreenRectNav.centerX() > (maxWidth / 2) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
                     commandMessage = "Left turn";
-                } else if (detectionScreenRectNav.width() > (maxWidth * 0.5)) {
+                }
+                if (detectionScreenRectNav.width() > (maxWidth * 0.5)) {
                     commandMessage = "Stop";
                 }
                 //For horizontal orientation with frame:
