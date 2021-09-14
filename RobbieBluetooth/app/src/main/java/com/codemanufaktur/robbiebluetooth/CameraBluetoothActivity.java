@@ -636,9 +636,14 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
 
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        setUseNNAPI(isChecked);
-        if (isChecked) apiSwitchCompat.setText("NNAPI");
-        else apiSwitchCompat.setText("TFLITE");
+        if (buttonView.getId() == R.id.api_info_switch) {
+            if (isChecked) {
+                setUseNNAPI(true);
+                apiSwitchCompat.setText("NNAPI");
+            } else {
+                apiSwitchCompat.setText("TFLITE");
+            }
+        }
         if (buttonView.getId() == R.id.previewSwitch) {
             if (isChecked) {
                 textureView.setVisibility(View.VISIBLE);
