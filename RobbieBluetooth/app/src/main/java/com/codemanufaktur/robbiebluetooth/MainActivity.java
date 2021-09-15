@@ -21,6 +21,7 @@ import com.codemanufaktur.robbiebluetooth.env.BorderedText;
 import com.codemanufaktur.robbiebluetooth.env.ImageUtils;
 import com.codemanufaktur.robbiebluetooth.env.Logger;
 import com.codemanufaktur.robbiebluetooth.tracking.MultiBoxTracker;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.tensorflow.lite.examples.detection.tflite.DepthEstimator;
 import org.tensorflow.lite.examples.detection.tflite.DepthEstimator.Device;
@@ -39,6 +40,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
     public String command = "" ;
     public String obstacleCommand = "";
     public int obstacleCounter = 0;
+    public int doorCounterMain = 0;
 
     // Configuration values for the prepackaged SSD model.
     private static final int TF_OD_API_INPUT_SIZE = 320;
@@ -392,6 +394,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                             showCameraResolutionOfDepthEstimation(cropSizeDepthmap + "x" + cropSizeDepthmap);
                                             showRotationInfo(String.valueOf(sensorOrientation));
                                             showInferenceOfDepthEstimation(lastProcessingTimeMs + "ms");
+                                            Snackbar.make(findViewById(R.id.myCoordinatorLayout), String.valueOf(automat.getState()), Snackbar.LENGTH_SHORT).show();
                                         }
                                     });
 
@@ -422,22 +425,25 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                     break;
                 case DOOR:
                     if ((tracker.commandMessage == "Door not reached") && (obstacleMessage == "No obstacle")) {
+                        doorCounterMain = 0;
                         command = "Forward";
                     }
                     else if (tracker.commandMessage == "Door reached") {
                         automat.setState(State.END);
                     }
-                    if ((tracker.commandMessage == "Door left") && (obstacleMessage == "No obstacle")) {
+                    else if ((tracker.commandMessage == "Door left") && (obstacleMessage == "No obstacle")) {
+                        doorCounterMain = 0;
                         command = "Left turn";
                     }
                     else if ((tracker.commandMessage == "Door right") && (obstacleMessage == "No obstacle")) {
+                        doorCounterMain = 0;
                         command = "Right turn";
                     }
-                    if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
-                        obstacleCounter++;
-                        if (obstacleCounter > 3) {
-                            automat.setState(State.OBSTACLE);
-                        }
+                    else if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
+                        automat.setState(State.OBSTACLE);
+                    }
+                    else {
+                        automat.setState(State.FINDDOORAGAIN);
                     }
                     break;
                 case OBSTACLE:
@@ -460,12 +466,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                 case PASSOBSTACLE:
                     if (automat.getStateTimeMs() < 2000) {
                         if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
-                            obstacleCounter++;
-                            command = "Forward";
-                            if (obstacleCounter > 3) {
                                 command = "Stop";
                                 automat.setState(State.OBSTACLE);
-                            }
                         } else {
                             command = "Forward";
                         }
@@ -512,7 +514,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
             }
             //Toast.makeText(getApplicationContext(), obstacleMessage, Toast.LENGTH_LONG).show();
             //Toast.makeText(getApplicationContext(), command, Toast.LENGTH_LONG).show();
-            Toast.makeText(getApplicationContext(), String.valueOf(automat.getState()), Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(), String.valueOf(automat.getState()), Toast.LENGTH_SHORT).show();
             //Toast.makeText(getApplicationContext(), String.valueOf(automat.getStateTimeMs()/1000), Toast.LENGTH_LONG).show();
         }
     }

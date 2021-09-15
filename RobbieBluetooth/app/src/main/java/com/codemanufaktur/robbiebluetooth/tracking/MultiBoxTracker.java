@@ -205,9 +205,17 @@ public class MultiBoxTracker {
                 final RectF detectionScreenRectNav = new RectF();
                 rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
                 Log.d("Screen width", "Screen width: " + detectionScreenRectNav.width());
+                if(detectionScreenRectNav.width() > (maxWidth * 0.9)) {
+                    commandMessage = "No door";
+                }
+
+                if(detectionScreenRectNav.width() > (maxHeight * 0.9)) {
+                    commandMessage = "No door";
+                }
+
                 if(detectionScreenRectNav.width() < (maxWidth * 0.6)) {
                     commandMessage = "Door not reached";
-                } else if(detectionScreenRectNav.width() > (maxWidth * 0.6)) {
+                } else if(detectionScreenRectNav.width() > (maxWidth * 0.6) && detectionScreenRectNav.width() < (maxWidth * 0.7)) {
                     commandMessage = "Door reached";
                 }
                 if ((detectionScreenRectNav.centerX() < (maxWidth / 4)) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
