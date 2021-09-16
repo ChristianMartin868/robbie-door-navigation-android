@@ -49,7 +49,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
     private static final String TF_OD_API_LABELS_FILE = "labelmap.txt";
     private static final DetectorMode MODE = DetectorMode.TF_OD_API;
     // Minimum detection confidence to track a detection.
-    private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.5f;
+    private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.8f;
     private static final boolean MAINTAIN_ASPECT = false;
     private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
     private static final boolean SAVE_PREVIEW_BITMAP = false;
@@ -316,7 +316,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float sumL = 0.0f;
                             float sumR = 0.0f;
                             //float T = 0.9F;
-                            int T = 160;
+                            int T = 120;
                             float r = 0.2F;
 
                             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
