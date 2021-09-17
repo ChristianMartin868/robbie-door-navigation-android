@@ -27,6 +27,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.Trace;
 import static android.os.Looper.loop;
@@ -83,7 +84,6 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     protected int previewHeight = 0;
     private boolean debug = false;
     private Handler handler;
-    private Timer mTimer;
     public static final int LOOP_INTERVAL_MS = 100;
     private HandlerThread handlerThread;
     private boolean useCamera2API;
@@ -103,7 +103,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     String RobotBTMacAdress="20:15:07:29:61:13"; //This is the Robots Bluetooth MacAdress
     UUID MY_UUID = new UUID(285278208, 64532);
 
-    private Handler timeHandler = new Handler();
+    private Handler timeHandler = new Handler(Looper.getMainLooper());
     public Automat automat = new Automat();
     public sendAutomat mysendAutomat = new sendAutomat();
     public double timerCounterLoop;
@@ -372,24 +372,6 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     }
 
     @Override
-    public synchronized void onStart() {
-        LOGGER.d("onStart " + this);
-        super.onStart();
-        mTimer = new Timer();
-        mTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        loop();
-                    }
-                });
-            }
-        }, 0, LOOP_INTERVAL_MS);
-    }
-
-    @Override
     public synchronized void onResume() {
         LOGGER.d("onResume " + this);
         super.onResume();
@@ -419,8 +401,6 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     public synchronized void onStop() {
         LOGGER.d("onStop " + this);
         super.onStop();
-        mTimer.cancel();
-        mTimer = null;
     }
 
     @Override
@@ -799,13 +779,14 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     //Von MainActivity
 
     void startSendTimer(){
-        timeHandler.postDelayed(runnable, 100);
+        timeHandler.postDelayed(runnable, LOOP_INTERVAL_MS);
     }
 
     private Runnable runnable = new Runnable() {
         @Override
         public void run() {
             /* do what you need to do */
+            loop();
             byte[] cmd = mysendAutomat.getNextSequence();
             myBTconnectedThread.write(cmd);
 
@@ -825,7 +806,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
             }
 
             /* and here comes the "trick" */
-            timeHandler.postDelayed(this, 100);
+            timeHandler.postDelayed(this, LOOP_INTERVAL_MS);
         }
     };
 
