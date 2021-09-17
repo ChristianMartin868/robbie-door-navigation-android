@@ -229,44 +229,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                         }
 
                         tracker.trackResults(mappedRecognitions, currTimestamp);
-                        /*
-                        if(tracker.commandMessage != "") {
-                            Toast.makeText(getApplicationContext(), tracker.commandMessage, Toast.LENGTH_LONG).show();
-                        }
 
-                         */
-
-                        /*
-                        switch (tracker.commandMessage){
-                            case "some1":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdsome1);
-                                break;
-                            case "lefttra":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdlefttra);
-                                break;
-                            case "righttra":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdrighttra);
-                                break;
-                            case "Left turn":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
-                                break;
-                            case "Right turn":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
-                                break;
-                            case "Back":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdBack);
-                                break;
-                            case "Stop":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
-                                break;
-                            case "Forward":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
-                                break;
-                            case "wheelaction":
-                                mysendAutomat.setNewCommand(mysendAutomat.cmdwheelaction);
-                                break;
-                        }
-                         */
                         trackingOverlay.postInvalidate();
 
                         //computingDetection = false;
@@ -316,8 +279,8 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float sumL = 0.0f;
                             float sumR = 0.0f;
                             //float T = 0.9F;
-                            int T = 120;
-                            float r = 0.2F;
+                            int T = 160;
+                            float r = 0.08F;
 
                             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
                             float [] [] disparityArray = new float [height] [width];
@@ -336,9 +299,9 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                 }
                             }
 
-                            for (int ii = (int)((width-40)/3+19); ii < (int)(width-20-(width-40)/3); ii++) //read central screen pixels
+                            for (int ii = (int)((width/4)); ii < (int)(3*(width/4)); ii++) //read central screen pixels
                             {
-                                for (int jj = 19; jj < height-20; jj++) {
+                                for (int jj = 10; jj < height-50; jj++) {
                                     /*
                                     if (disparityArray[jj] [ii] > T) {
                                         counter++;
@@ -354,18 +317,18 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             if (counter < (r * numC)) {
                                 obstacleMessage = "No obstacle";
                             } else {
-                                for (int ii = 19; ii < (int)((width-40)/3+19); ii++) //read left screen pixels
+                                for (int ii = 19; ii < (int)((width/4)); ii++) //read left screen pixels
                                 {
-                                    for (int jj = 19; jj < height-20; jj++) {
+                                    for (int jj = 10; jj < height-50; jj++) {
                                         //sumL = disparityArray[jj] [ii];
                                         sumL =+ Color.red(bitmap.getPixel(ii, jj));
                                         numL++;
                                     }
                                 }
 
-                                for (int ii = (int)(width-20-(width-40)/3); ii < (width-20); ii++) //read right screen pixels
+                                for (int ii = (int)(3*(width/4)); ii < (width-20); ii++) //read right screen pixels
                                 {
-                                    for (int jj = 19; jj < height-20; jj++) {
+                                    for (int jj = 10; jj < height-50; jj++) {
                                         //sumR =+ disparityArray[jj] [ii];
                                         sumR =+ Color.red(bitmap.getPixel(ii, jj));
                                         numR++;
@@ -416,8 +379,11 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
 
             switch(automat.getState()) {
                 case START:
-                    if (tracker.commandMessage == "No door") {
+                    if ((tracker.commandMessage == "No door") && (obstacleMessage == "No obstacle")) {
                         command = "Left turn";
+                    }
+                    else if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
+                        automat.setState(State.OBSTACLE);
                     }
                     else {
                         automat.setState(State.DOOR);
@@ -464,7 +430,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                     }
                     break;
                 case PASSOBSTACLE:
-                    if (automat.getStateTimeMs() < 2000) {
+                    if (automat.getStateTimeMs() < 3000) {
                         if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
                                 command = "Stop";
                                 automat.setState(State.OBSTACLE);
@@ -472,7 +438,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             command = "Forward";
                         }
                     }
-                    else if (automat.getStateTimeMs() > 2000) {
+                    else if (automat.getStateTimeMs() > 3000) {
                         command = "Stop";
                         automat.setState(State.FINDDOORAGAIN);
                     }
