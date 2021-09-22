@@ -52,6 +52,8 @@ public class Automat {
         return System.currentTimeMillis() - stateStartTime;
     }
 
+    public long getStateStartTime() { return  stateStartTime; }
+
     public State getState() {
         return state;
     }

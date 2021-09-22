@@ -41,6 +41,9 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
     public String obstacleCommand = "";
     public int obstacleCounter = 0;
     public int doorCounterMain = 0;
+    public int doorReachedCounter = 0;
+    public long startTime = 0;
+    public long endTime = 0;
 
     // Configuration values for the prepackaged SSD model.
     private static final int TF_OD_API_INPUT_SIZE = 320;
@@ -278,7 +281,6 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float avR;
                             float sumL = 0.0f;
                             float sumR = 0.0f;
-                            //float T = 0.9F;
                             int T = 160;
                             float r = 0.08F;
 
@@ -357,7 +359,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                             showCameraResolutionOfDepthEstimation(cropSizeDepthmap + "x" + cropSizeDepthmap);
                                             showRotationInfo(String.valueOf(sensorOrientation));
                                             showInferenceOfDepthEstimation(lastProcessingTimeMs + "ms");
-                                            Snackbar.make(findViewById(R.id.myCoordinatorLayout), String.valueOf(automat.getState()), Snackbar.LENGTH_SHORT).show();
+                                            Snackbar.make(findViewById(R.id.myCoordinatorLayout), "State: " + String.valueOf(automat.getState()) + "          End time: " + String.valueOf(endTime/1000), Snackbar.LENGTH_SHORT).show();
                                         }
                                     });
 
@@ -379,11 +381,9 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
 
             switch(automat.getState()) {
                 case START:
-                    if ((tracker.commandMessage == "No door") && (obstacleMessage == "No obstacle")) {
+                    startTime = automat.getStateStartTime();
+                    if ((tracker.commandMessage == "No door")) {
                         command = "Left turn";
-                    }
-                    else if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
-                        automat.setState(State.OBSTACLE);
                     }
                     else {
                         automat.setState(State.DOOR);
@@ -395,7 +395,10 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                         command = "Forward";
                     }
                     else if (tracker.commandMessage == "Door reached") {
-                        automat.setState(State.END);
+                        doorReachedCounter++;
+                        if (doorReachedCounter > 3) {
+                            automat.setState(State.END);
+                        }
                     }
                     else if ((tracker.commandMessage == "Door left") && (obstacleMessage == "No obstacle")) {
                         doorCounterMain = 0;
@@ -458,6 +461,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                     }
                     break;
                 case END:
+                    endTime = automat.getStateStartTime() - startTime;
                     command = "Stop";
                     automat.command = "Stop";
                     break;
@@ -478,10 +482,6 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                     mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
                     break;
             }
-            //Toast.makeText(getApplicationContext(), obstacleMessage, Toast.LENGTH_LONG).show();
-            //Toast.makeText(getApplicationContext(), command, Toast.LENGTH_LONG).show();
-            //Toast.makeText(getApplicationContext(), String.valueOf(automat.getState()), Toast.LENGTH_SHORT).show();
-            //Toast.makeText(getApplicationContext(), String.valueOf(automat.getStateTimeMs()/1000), Toast.LENGTH_LONG).show();
         }
     }
 
