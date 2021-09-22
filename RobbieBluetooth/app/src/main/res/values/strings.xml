@@ -10,8 +10,8 @@
 
     <string name="tfe_ic_device" translatable="false">Device for Depth Estimation:</string>
     <string-array name="tfe_ic_devices" translatable="false">
-        <item>CPU</item>
         <item>GPU</item>
+        <item>CPU</item>
         <item>NNAPI</item>
     </string-array>
 </resources>

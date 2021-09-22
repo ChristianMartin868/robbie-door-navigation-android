@@ -132,7 +132,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     TextureView textureView;
 
     private Model model = Model.MIDAS;
-    private Device device = Device.CPU;
+    private Device device = Device.GPU;
     private int numThreads = -1;
 
     @Override
@@ -245,6 +245,10 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         model = Model.valueOf(modelSpinner.getSelectedItem().toString().toUpperCase());
         device = Device.valueOf(deviceSpinner.getSelectedItem().toString());
         numThreads = Integer.parseInt(threadsDepthTextView.getText().toString().trim());
+
+        if (device == Device.GPU) {
+            threadsDepthTextView.setText("N/A");
+        }
 
         previewSwitch.setChecked(false);
     }
@@ -750,7 +754,8 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
         if (parent == modelSpinner) {
             setModel(Model.valueOf(parent.getItemAtPosition(pos).toString().toUpperCase()));
-        } else if (parent == deviceSpinner) {
+        }
+        if (parent == deviceSpinner) {
             setDevice(Device.valueOf(parent.getItemAtPosition(pos).toString()));
         }
     }
