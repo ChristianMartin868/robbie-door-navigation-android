@@ -282,7 +282,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float sumL = 0.0f;
                             float sumR = 0.0f;
                             int T = 160;
-                            float r = 0.08F;
+                            float r = 0.1F;
 
                             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
                             float [] [] disparityArray = new float [height] [width];
@@ -359,7 +359,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                             showCameraResolutionOfDepthEstimation(cropSizeDepthmap + "x" + cropSizeDepthmap);
                                             showRotationInfo(String.valueOf(sensorOrientation));
                                             showInferenceOfDepthEstimation(lastProcessingTimeMs + "ms");
-                                            Snackbar.make(findViewById(R.id.myCoordinatorLayout), "State: " + String.valueOf(automat.getState()) + "          End time: " + String.valueOf(endTime/1000), Snackbar.LENGTH_SHORT).show();
+                                            Snackbar.make(findViewById(R.id.myCoordinatorLayout), "State: " + String.valueOf(automat.getState()) + "          End time in ms: " + String.valueOf(endTime), Snackbar.LENGTH_SHORT).show();
                                         }
                                     });
 
@@ -454,6 +454,13 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                         }
                         else if (obstacleCommand == "Left turn") {
                             command = "Right turn";
+                        }
+                        else if (obstacleMessage == "No obstacle"){
+                            command = "Forward";
+                        }
+                        else if (obstacleMessage == "Obstacle right" || obstacleMessage == "Obstacle left") {
+                            command = "Stop";
+                            automat.setState(State.OBSTACLE);
                         }
                     }
                     else {
