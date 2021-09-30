@@ -41,6 +41,8 @@ dependencies {
 
     // Build off of nightly TensorFlow Lite
     implementation 'org.tensorflow:tensorflow-lite:2.6.0'
+    //implementation('org.tensorflow:tensorflow-lite:0.0.0-nightly') //for Pydnet
+    //implementation('org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly') //for Pydnet
     implementation 'org.tensorflow:tensorflow-lite-metadata:0.2.1'
     //implementation 'org.tensorflow:tensorflow-lite-metadata:0.1.0'
     implementation 'org.tensorflow:tensorflow-lite-gpu:2.6.0'
