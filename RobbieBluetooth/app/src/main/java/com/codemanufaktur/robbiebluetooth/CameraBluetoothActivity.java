@@ -65,6 +65,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -273,6 +274,28 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
             LOGGER.w("Dropping frame!");
             return;
         }
+        LOGGER.i("frameCamera API: Frame rate: !"+camera.getParameters().getPreviewFrameRate());
+        int[] findRange = null;
+        int defFPS = 20 * 1000;
+        List<int[]> fpsList = camera.getParameters().getSupportedPreviewFpsRange();
+        if (fpsList != null && fpsList.size() > 0) {
+            for (int i = 0; i < fpsList.size(); ++i) {
+                int[] range = fpsList.get(i);
+                if (range != null
+                        && Camera.Parameters.PREVIEW_FPS_MIN_INDEX < range.length
+                        && Camera.Parameters.PREVIEW_FPS_MAX_INDEX < range.length) {
+                    Log.i(TAG, "Camera index:" + i + " support min fps:" + range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX]);
+                    Log.i(TAG, "Camera index:" + i + " support max fps:" + range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+                    if (findRange == null) {
+                        if (defFPS <= range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]) {
+                            findRange = range;
+                            Log.i(TAG, "Camera found appropriate fps, min fps:" + range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX]
+                                    + " ,max fps:" + range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+                        }
+                    }
+                }
+            }
+        }
 
         try {
             // Initialize the storage bitmaps once when the resolution is known.
@@ -314,6 +337,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     /** Callback for Camera2 API */
     @Override
     public void onImageAvailable(final ImageReader reader) {
+        LOGGER.i("frame Camera2API!");
         // We need wait until we have some size from onPreviewSizeChosen
         if (previewWidth == 0 || previewHeight == 0) {
             return;

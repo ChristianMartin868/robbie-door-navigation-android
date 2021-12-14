@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'de.undercouch.download'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
     buildToolsVersion '30.0.2'
     defaultConfig {
         applicationId "com.codemanufaktur.robbieDoor"
@@ -61,7 +61,7 @@ dependencies {
 
     interpreterImplementation project(":lib_interpreter")
     taskApiImplementation project(":lib_task_api")
-    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'androidx.appcompat:appcompat:1.4.0'
     implementation 'androidx.coordinatorlayout:coordinatorlayout:1.1.0'
     implementation 'com.google.android.material:material:1.4.0'
 
