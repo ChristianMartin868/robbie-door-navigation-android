@@ -10,7 +10,7 @@ A mid-range Android phone is mounted on a small Arduino robot. Using only its ca
 3. turns both into navigation signals, runs a **state machine every 100 ms**, and
 4. sends drive commands to the robot via **Bluetooth**.
 
-Training pipeline for the door detectors: [`robbie-door-detection-training`](../robbie-door-detection-training).
+Training pipeline for the door detectors: [`robbie-door-detection-training`](https://github.com/ChristianMartin868/robbie-door-detection-training).
 
 ```
 Camera frame ──► Door detector (SSD, TFLite) ──► DoorSignal ─────┐
