@@ -1,5 +1,7 @@
 package com.codemanufaktur.robbiebluetooth;
 
+import android.os.SystemClock;
+import com.codemanufaktur.robbiebluetooth.navigation.NavigationStateMachine;
 import android.Manifest;
 import android.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
@@ -105,7 +107,8 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
     UUID MY_UUID = new UUID(285278208, 64532);
 
     private Handler timeHandler = new Handler(Looper.getMainLooper());
-    public Automat automat = new Automat();
+    /** Navigation logic, stepped every LOOP_INTERVAL_MS from the UI thread (see loop()). */
+    protected NavigationStateMachine navigation = new NavigationStateMachine(SystemClock.uptimeMillis());
     public sendAutomat mysendAutomat = new sendAutomat();
     public double timerCounterLoop;
 
@@ -141,7 +144,7 @@ public abstract class CameraBluetoothActivity extends AppCompatActivity
         LOGGER.d("onCreate " + this);
         super.onCreate(null);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        automat.setState(State.START);
+        navigation = new NavigationStateMachine(SystemClock.uptimeMillis());
         timerCounterLoop = 0.0;
 
         setContentView(R.layout.activity_camera);

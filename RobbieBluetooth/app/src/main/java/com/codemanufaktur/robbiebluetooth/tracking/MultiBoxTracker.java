@@ -19,7 +19,8 @@ import com.codemanufaktur.robbiebluetooth.MainActivity;
 import com.codemanufaktur.robbiebluetooth.env.BorderedText;
 import com.codemanufaktur.robbiebluetooth.env.ImageUtils;
 import com.codemanufaktur.robbiebluetooth.env.Logger;
-import com.codemanufaktur.robbiebluetooth.sendAutomat;
+import com.codemanufaktur.robbiebluetooth.navigation.DoorClassifier;
+import com.codemanufaktur.robbiebluetooth.navigation.DoorSignal;
 
 import org.tensorflow.lite.examples.detection.tflite.Detector;
 
@@ -58,7 +59,11 @@ public class MultiBoxTracker {
     private int frameWidth;
     private int frameHeight;
     private int sensorOrientation;
-    public String commandMessage = "";
+    /**
+     * Latest door signal. Written by the inference thread, read by the 100 ms control loop on
+     * the UI thread, hence volatile. Null until the first frame has been processed.
+     */
+    public volatile DoorSignal doorSignal = null;
     public int maxHeight = 0;
     public int maxWidth = 0;
 
@@ -180,7 +185,7 @@ public class MultiBoxTracker {
         trackedObjects.clear();
         if (rectsToTrack.isEmpty()) {
             logger.v("Nothing to track, aborting.");
-            commandMessage = "No door";
+            doorSignal = DoorSignal.NO_DOOR;
 
             return;
         }
@@ -199,60 +204,22 @@ public class MultiBoxTracker {
             }
         }
 
+        // Navigate towards the most confident door. The thesis version let every tracked object
+        // overwrite a String message (last one won) and kept a stale value for some box sizes.
+        TrackedRecognition bestDoor = null;
         for (TrackedRecognition recogElement : trackedObjects) {
-            Log.d("Maxwidth", "maxwidth: " + maxWidth + " maxHeight: " + maxHeight);
-            if(recogElement.title.equals("Door")) {
-                final RectF detectionScreenRectNav = new RectF();
-                rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
-                Log.d("Screen width", "Screen width: " + detectionScreenRectNav.width());
-                if(detectionScreenRectNav.width() > (maxWidth * 0.9)) {
-                    commandMessage = "No door";
-                }
-
-                if(detectionScreenRectNav.width() > (maxHeight * 0.9)) {
-                    commandMessage = "No door";
-                }
-
-                if(detectionScreenRectNav.width() < (maxWidth * 0.6)) {
-                    commandMessage = "Door not reached";
-                } else if(detectionScreenRectNav.width() > (maxWidth * 0.6) && detectionScreenRectNav.width() < (maxWidth * 0.7)) {
-                    commandMessage = "Door reached";
-                }
-                if ((detectionScreenRectNav.centerX() < (maxWidth / 4)) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    commandMessage = "Door left";
-                } else if (detectionScreenRectNav.centerX() > (maxWidth * 0.75) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    commandMessage = "Door right";
-                }
-                //For horizontal orientation with frame:
-                /*
-                if(recogElement.location.width() < (frameWidth * 0.3)) {
-                    commandMessage = "Forward";
-                } else if(recogElement.location.width() > (frameWidth * 0.3)) {
-                    commandMessage = "Stop";
-                }*/
-            }
-            if(recogElement.title.equals("banana")) {
-                final RectF detectionScreenRectNav = new RectF();
-                rgbFrameToScreen.mapRect(detectionScreenRectNav, recogElement.location);
-                if ((detectionScreenRectNav.centerX() < (maxWidth / 2)) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    commandMessage = "Right turn";
-                } else if (detectionScreenRectNav.centerX() > (maxWidth / 2) & (detectionScreenRectNav.width() < (maxWidth * 0.5))) {
-                    commandMessage = "Left turn";
-                }
-                if (detectionScreenRectNav.width() > (maxWidth * 0.5)) {
-                    commandMessage = "Stop";
-                }
-                //For horizontal orientation with frame:
-                /*
-                if ((recogElement.location.centerX() < (frameWidth / 2)) & (recogElement.location.width() < (frameWidth * 0.3))) {
-                    commandMessage = "Right turn";
-                } else if (recogElement.location.centerX() > (frameWidth / 2) & (recogElement.location.width() < (frameWidth * 0.3))) {
-                    commandMessage = "Left turn";
-                } else if (recogElement.location.width() > (frameWidth * 0.3)) {
-                    commandMessage = "Stop";
-                }*/
+            if ("Door".equals(recogElement.title)
+                    && (bestDoor == null || recogElement.detectionConfidence > bestDoor.detectionConfidence)) {
+                bestDoor = recogElement;
             }
         }
+        if (bestDoor == null) {
+            doorSignal = DoorSignal.NO_DOOR;
+            return;
+        }
+        final RectF doorOnScreen = new RectF();
+        rgbFrameToScreen.mapRect(doorOnScreen, bestDoor.location);
+        doorSignal = DoorClassifier.classify(doorOnScreen.centerX(), doorOnScreen.width(), maxWidth);
     }
 
     private static class TrackedRecognition {

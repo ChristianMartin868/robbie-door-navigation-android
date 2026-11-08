@@ -20,6 +20,10 @@ import com.codemanufaktur.robbiebluetooth.customview.OverlayView;
 import com.codemanufaktur.robbiebluetooth.env.BorderedText;
 import com.codemanufaktur.robbiebluetooth.env.ImageUtils;
 import com.codemanufaktur.robbiebluetooth.env.Logger;
+import com.codemanufaktur.robbiebluetooth.navigation.DoorSignal;
+import com.codemanufaktur.robbiebluetooth.navigation.DriveCommand;
+import com.codemanufaktur.robbiebluetooth.navigation.ObstacleDetector;
+import com.codemanufaktur.robbiebluetooth.navigation.ObstacleSignal;
 import com.codemanufaktur.robbiebluetooth.tracking.MultiBoxTracker;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -36,14 +40,12 @@ import java.util.List;
 
 public class MainActivity extends CameraBluetoothActivity implements ImageReader.OnImageAvailableListener {
     private static final Logger LOGGER = new Logger();
-    public String obstacleMessage = "";
-    public String command = "" ;
-    public String obstacleCommand = "";
-    public int obstacleCounter = 0;
-    public int doorCounterMain = 0;
-    public int doorReachedCounter = 0;
-    public long startTime = 0;
-    public long endTime = 0;
+    /**
+     * Latest obstacle signal. Written by the inference thread, read by the 100 ms control loop
+     * on the UI thread, hence volatile. Null until the first depth map has been processed.
+     */
+    private volatile ObstacleSignal obstacleSignal = null;
+    private final ObstacleDetector obstacleDetector = new ObstacleDetector();
 
     // Configuration values for the prepackaged SSD model.
     private static final int TF_OD_API_INPUT_SIZE = 320;
@@ -253,97 +255,14 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                             float [] img_array = depthEstimator.recognizeImage(rgbFrameDepthBitmap, sensorOrientation);
                             lastProcessingTimeMs = SystemClock.uptimeMillis() - startTimeDepthEstimation;
 
-                            float maxval = Float.NEGATIVE_INFINITY;
-                            float minval = Float.POSITIVE_INFINITY;
-                            for (float cur : img_array) {
-                                maxval = Math.max(maxval, cur);
-                                minval = Math.min(minval, cur);
-                            }
-                            float multiplier = 0;
-                            if ((maxval - minval) > 0) multiplier = 255 / (maxval - minval);
+                            final int width = imageSizeX;
+                            final int height = imageSizeY;
+                            // The MiDaS output is rotated by 180 degrees relative to the preview.
+                            final float[] disparity = ObstacleDetector.rotate180(img_array);
+                            obstacleSignal = obstacleDetector.detect(disparity, width, height);
 
-                            int[] img_normalized = new int[img_array.length];
-                            float[] img_float_normalized = new float[img_array.length];
-                            for (int i = 0; i < img_array.length; ++i) {
-                                float val = (float) (multiplier * (img_array[i] - minval));
-                                img_normalized[i] = (int) val;
-                                img_float_normalized[i] = val;
-                            }
-
-                            int width = imageSizeX;
-                            int height = imageSizeY;
-
-                            int counter = 0;
-                            int numL = 0;
-                            int numC = 0;
-                            int numR = 0;
-                            float avL;
-                            float avR;
-                            float sumL = 0.0f;
-                            float sumR = 0.0f;
-                            int T = 160;
-                            float r = 0.1F;
-
-                            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-                            float [] [] disparityArray = new float [height] [width];
-
-                            for (int ii = 0; ii < width; ii++) //pass the screen pixels in 2 directions
-                            {
-                                for (int jj = 0; jj < height; jj++) {
-                                    //int val = img_normalized[ii + jj * width];
-                                    int index = (width - ii - 1) + (height - jj - 1) * width;
-                                    if(index < img_array.length) {
-                                        int val = img_normalized[index];
-                                        float floatVal = img_float_normalized[index];
-                                        bitmap.setPixel(ii, jj, Color.rgb(val, val, val));
-                                        disparityArray[jj] [ii] = floatVal;
-                                    }
-                                }
-                            }
-
-                            for (int ii = (int)((width/4)); ii < (int)(3*(width/4)); ii++) //read central screen pixels
-                            {
-                                for (int jj = 10; jj < height-50; jj++) {
-                                    /*
-                                    if (disparityArray[jj] [ii] > T) {
-                                        counter++;
-                                    }
-                                     */
-                                    if (Color.red(bitmap.getPixel(ii, jj)) > T) {
-                                        counter++;
-                                    }
-                                    numC++;
-                                }
-                            }
-
-                            if (counter < (r * numC)) {
-                                obstacleMessage = "No obstacle";
-                            } else {
-                                for (int ii = 19; ii < (int)((width/4)); ii++) //read left screen pixels
-                                {
-                                    for (int jj = 10; jj < height-50; jj++) {
-                                        //sumL = disparityArray[jj] [ii];
-                                        sumL += Color.red(bitmap.getPixel(ii, jj));
-                                        numL++;
-                                    }
-                                }
-
-                                for (int ii = (int)(3*(width/4)); ii < (width-20); ii++) //read right screen pixels
-                                {
-                                    for (int jj = 10; jj < height-50; jj++) {
-                                        //sumR =+ disparityArray[jj] [ii];
-                                        sumR += Color.red(bitmap.getPixel(ii, jj));
-                                        numR++;
-                                    }
-                                }
-                                avL = sumL / numL;
-                                avR = sumR / numR;
-                                if (avL < avR) {
-                                    obstacleMessage = "Obstacle right";
-                                } else {
-                                    obstacleMessage = "Obstacle left";
-                                }
-                            }
+                            // Grey-scale preview of the depth map (visualisation only).
+                            final Bitmap bitmap = depthPreview(disparity, width, height);
 
 
                             //computingDetection = false;
@@ -359,7 +278,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                             showCameraResolutionOfDepthEstimation(cropSizeDepthmap + "x" + cropSizeDepthmap);
                                             showRotationInfo(String.valueOf(sensorOrientation));
                                             showInferenceOfDepthEstimation(lastProcessingTimeMs + "ms");
-                                            Snackbar.make(findViewById(R.id.myCoordinatorLayout), "State: " + String.valueOf(automat.getState()) + "          End time in ms: " + String.valueOf(endTime), Snackbar.LENGTH_SHORT).show();
+                                            Snackbar.make(findViewById(R.id.myCoordinatorLayout), "State: " + navigation.getState() + "          End time in ms: " + navigation.getRunDurationMs(), Snackbar.LENGTH_SHORT).show();
                                         }
                                     });
 
@@ -374,122 +293,45 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
 
     @Override
     protected void loop() {
-
         timerCounterLoop++;
-        if (tracker != null && tracker.commandMessage!= null && obstacleMessage != "") {
-            automat.input(tracker.commandMessage, obstacleMessage);
-
-            switch(automat.getState()) {
-                case START:
-                    startTime = automat.getStateStartTime();
-                    if ((tracker.commandMessage == "No door")) {
-                        command = "Left turn";
-                    }
-                    else {
-                        automat.setState(State.DOOR);
-                    }
-                    break;
-                case DOOR:
-                    if ((tracker.commandMessage == "Door not reached") && (obstacleMessage == "No obstacle")) {
-                        doorCounterMain = 0;
-                        command = "Forward";
-                    }
-                    else if (tracker.commandMessage == "Door reached") {
-                        doorReachedCounter++;
-                        if (doorReachedCounter > 3) {
-                            automat.setState(State.END);
-                        }
-                    }
-                    else if ((tracker.commandMessage == "Door left") && (obstacleMessage == "No obstacle")) {
-                        doorCounterMain = 0;
-                        command = "Left turn";
-                    }
-                    else if ((tracker.commandMessage == "Door right") && (obstacleMessage == "No obstacle")) {
-                        doorCounterMain = 0;
-                        command = "Right turn";
-                    }
-                    else if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
-                        automat.setState(State.OBSTACLE);
-                    }
-                    else {
-                        automat.setState(State.FINDDOORAGAIN);
-                    }
-                    break;
-                case OBSTACLE:
-                    obstacleCounter = 0;
-                    command = "Stop";
-                    if (obstacleMessage == "No obstacle") {
-                        automat.setState(State.PASSOBSTACLE);
-                    }
-                    else {
-                        if (obstacleMessage == "Obstacle left") {
-                            command = "Right turn";
-                            obstacleCommand = "Right turn";
-                        }
-                        else if (obstacleMessage == "Obstacle right") {
-                            command = "Left turn";
-                            obstacleCommand = "Left turn";
-                        }
-                    }
-                    break;
-                case PASSOBSTACLE:
-                    if (automat.getStateTimeMs() < 3000) {
-                        if ((obstacleMessage == "Obstacle left") || (obstacleMessage == "Obstacle right")) {
-                                command = "Stop";
-                                automat.setState(State.OBSTACLE);
-                        } else {
-                            command = "Forward";
-                        }
-                    }
-                    else if (automat.getStateTimeMs() > 3000) {
-                        command = "Stop";
-                        automat.setState(State.FINDDOORAGAIN);
-                    }
-                    break;
-                case FINDDOORAGAIN:
-                    obstacleCounter = 0;
-                    if (tracker.commandMessage == "No door") {
-                        if (obstacleCommand == "Right turn") {
-                            command = "Left turn";
-                        }
-                        else if (obstacleCommand == "Left turn") {
-                            command = "Right turn";
-                        }
-                        else if (obstacleMessage == "No obstacle"){
-                            command = "Forward";
-                        }
-                        else if (obstacleMessage == "Obstacle right" || obstacleMessage == "Obstacle left") {
-                            command = "Stop";
-                            automat.setState(State.OBSTACLE);
-                        }
-                    }
-                    else {
-                        automat.setState(State.DOOR);
-                    }
-                    break;
-                case END:
-                    endTime = automat.getStateStartTime() - startTime;
-                    command = "Stop";
-                    automat.command = "Stop";
-                    break;
-            }
-
-            switch (command){
-                case "Left turn":
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
-                    break;
-                case "Right turn":
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
-                    break;
-                case "Stop":
-                case "Error":
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
-                    break;
-                case "Forward":
-                    mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
-                    break;
-            }
+        final DoorSignal door = tracker != null ? tracker.doorSignal : null;
+        final ObstacleSignal obstacle = obstacleSignal;
+        if (door == null || obstacle == null) {
+            return; // no perception result yet
         }
+        final DriveCommand command = navigation.step(door, obstacle, SystemClock.uptimeMillis());
+        switch (command) {
+            case LEFT_TURN:
+                mysendAutomat.setNewCommand(mysendAutomat.cmdleftturn);
+                break;
+            case RIGHT_TURN:
+                mysendAutomat.setNewCommand(mysendAutomat.cmdrightturn);
+                break;
+            case FORWARD:
+                mysendAutomat.setNewCommand(mysendAutomat.cmdFwd);
+                break;
+            case STOP:
+            default:
+                mysendAutomat.setNewCommand(mysendAutomat.cmdStop);
+                break;
+        }
+    }
+
+    /** Min-max normalised grey-scale bitmap of a disparity map (for the on-screen preview). */
+    private static Bitmap depthPreview(float[] disparity, int width, int height) {
+        float min = Float.POSITIVE_INFINITY;
+        float max = Float.NEGATIVE_INFINITY;
+        for (int i = 0; i < width * height; i++) {
+            min = Math.min(min, disparity[i]);
+            max = Math.max(max, disparity[i]);
+        }
+        final float scale = max > min ? 255f / (max - min) : 0f;
+        final int[] pixels = new int[width * height];
+        for (int i = 0; i < pixels.length; i++) {
+            final int v = (int) ((disparity[i] - min) * scale);
+            pixels[i] = Color.rgb(v, v, v);
+        }
+        return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.RGB_565);
     }
 
     @Override
