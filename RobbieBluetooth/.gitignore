@@ -11,3 +11,8 @@
 /build
 /captures
 .externalNativeBuild
+
+# Gradle build output of library modules
+/lib_interpreter/build/
+/lib_task_api/build/
+/app/build/
