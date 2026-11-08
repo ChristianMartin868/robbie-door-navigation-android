@@ -323,7 +323,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                 {
                                     for (int jj = 10; jj < height-50; jj++) {
                                         //sumL = disparityArray[jj] [ii];
-                                        sumL =+ Color.red(bitmap.getPixel(ii, jj));
+                                        sumL += Color.red(bitmap.getPixel(ii, jj));
                                         numL++;
                                     }
                                 }
@@ -332,7 +332,7 @@ public class MainActivity extends CameraBluetoothActivity implements ImageReader
                                 {
                                     for (int jj = 10; jj < height-50; jj++) {
                                         //sumR =+ disparityArray[jj] [ii];
-                                        sumR =+ Color.red(bitmap.getPixel(ii, jj));
+                                        sumR += Color.red(bitmap.getPixel(ii, jj));
                                         numR++;
                                     }
                                 }
