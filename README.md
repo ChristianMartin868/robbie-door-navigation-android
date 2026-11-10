@@ -6,7 +6,7 @@ machine learning"* (Technische Hochschule Nürnberg, Dec 2021, industry partner:
 A mid-range Android phone is mounted on a small Arduino robot. Using only its camera, the phone
 
 1. **detects a door** with an SSD MobileNet V2 FPN-Lite 320 model (TensorFlow Lite, int8, ~50 ms),
-2. **estimates depth** from the same frame with MiDaS v2.1 small (~160–180 ms on GPU),
+2. **estimates depth** from the same frame with MiDaS v2.1 small (~183 ms on GPU),
 3. turns both into navigation signals, runs a **state machine every 100 ms**, and
 4. sends drive commands to the robot via **Bluetooth**.
 
